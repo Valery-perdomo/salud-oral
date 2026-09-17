@@ -1,0 +1,158 @@
+/* Importar tipografía moderna y profesional */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    background-color: #f8fafc !important;
+    color: #1e293b !important;
+}
+
+/* Header Banner Institucional */
+.header-banner {
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+    padding: 1.25rem 1.75rem;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    margin-bottom: 1rem;
+    color: #ffffff !important;
+}
+
+.header-title {
+    color: #ffffff !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    letter-spacing: -0.02em;
+}
+
+.header-subtitle {
+    color: #ccfbf1 !important;
+    font-size: 0.875rem !important;
+    margin: 0.25rem 0 0 0 !important;
+    font-weight: 400;
+}
+
+.badge-session {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff !important;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Subheader Estado */
+.subheader-info {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #0f766e;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+/* Tarjetas de Módulos */
+.stCardModule {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+}
+
+.badge-modulo {
+    background-color: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    margin-right: 0.75rem;
+}
+
+.subseccion-titulo {
+    color: #0f766e;
+    font-weight: 700;
+    font-size: 0.875rem;
+    letter-spacing: 0.03em;
+    display: inline-block;
+    border-bottom: 2px solid #ccfbf1;
+    padding-bottom: 0.2rem;
+}
+
+/* Estilizado Formidable para Inputs y Labels */
+div[data-baseweb="input"] > div {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    border-radius: 8px !important;
+    color: #0f172a !important;
+}
+
+div[data-baseweb="select"] > div {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    border-radius: 8px !important;
+    color: #0f172a !important;
+}
+
+label p {
+    color: #334155 !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+}
+
+/* Radio buttons mejorados */
+div[role="radiogroup"] label p {
+    font-weight: 500 !important;
+    color: #1e293b !important;
+}
+
+/* Botones principales */
+.stButton > button {
+    background-color: #0f766e !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    border: none !important;
+    padding: 0.6rem 1.25rem !important;
+    box-shadow: 0 2px 4px rgba(15, 118, 110, 0.2) !important;
+    transition: all 0.2s ease !important;
+}
+
+.stButton > button:hover {
+    background-color: #0d9488 !important;
+    box-shadow: 0 4px 8px rgba(15, 118, 110, 0.3) !important;
+}
+
+/* Ajustes de Pestañas (Tabs) */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+    background-color: #f1f5f9;
+    padding: 6px;
+    border-radius: 10px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    height: 40px;
+    white-space: pre-wrap;
+    border-radius: 6px;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: #ffffff !important;
+    color: #0f766e !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
