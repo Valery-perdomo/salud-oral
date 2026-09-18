@@ -56,21 +56,13 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Barra de control superior con el botón de limpieza visible y directo
-c_info, c_btn = st.columns([4, 1])
-with c_info:
-    st.markdown("""
-        <div style="padding: 10px 0; color: #0f766e; font-size: 13px; font-weight: 600;">
-            <b>Consulta nueva</b> / Completa los módulos en orden para construir el expediente. &nbsp;&nbsp;|&nbsp;&nbsp; 
-            <span style="color: #475569;">Estado: <b style="color: #059669;">En diligenciamiento</b></span>
-        </div>
-    """, unsafe_allow_html=True)
-
-with c_btn:
-    if st.button("🔄 Limpiar / Nuevo", use_container_width=True):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.rerun()
+# Barra de estado limpia (sin el botón de borrado)
+st.markdown("""
+    <div style="padding: 10px 0; color: #0f766e; font-size: 13px; font-weight: 600;">
+        <b>Consulta nueva</b> / Completa los módulos en orden para construir el expediente. &nbsp;&nbsp;|&nbsp;&nbsp; 
+        <span style="color: #475569;">Estado: <b style="color: #059669;">En diligenciamiento</b></span>
+    </div>
+""", unsafe_allow_html=True)
 
 # Inicializar estados de sesión
 if "evoluciones" not in st.session_state:
@@ -134,7 +126,26 @@ with tab1:
     with c1_3:
         direccion = st.text_input("Dirección de Vivienda", value="", placeholder="Dirección...", key="input_dir")
         telefono = st.text_input("Teléfono de Contacto", value="", placeholder="Teléfono...", key="input_tel")
-        ciudad_depto = st.text_input("Ciudad / Departamento", value="Neiva / Huila", key="input_ciudad")
+        
+        # Selector de Ciudad / Departamento principal de Colombia
+        lista_ciudades = [
+            "Neiva / Huila",
+            "Bogotá D.C.",
+            "Medellín / Antioquia",
+            "Cali / Valle del Cauca",
+            "Barranquilla / Atlántico",
+            "Cartagena / Bolívar",
+            "Bucaramanga / Santander",
+            "Ibagué / Tolima",
+            "Villavicencio / Meta",
+            "Florencia / Caquetá",
+            "Garzón / Huila",
+            "Pitalito / Huila",
+            "La Plata / Huila",
+            "Otro / Fuera de Colombia"
+        ]
+        ciudad_depto = st.selectbox("Ciudad / Departamento", lista_ciudades, key="input_ciudad")
+        
         estado_civil = st.selectbox("Estado Civil", ["Seleccione...", "Soltero", "Casado", "Otro"], key="input_estcivil")
         ocupacion = st.text_input("Ocupación", value="", placeholder="Ocupación...", key="input_ocupacion")
 
