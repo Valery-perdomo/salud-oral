@@ -11,6 +11,16 @@ st.set_page_config(
     layout="wide"
 )
 
+# Ocultar el menú de hamburguesa y barra superior de Streamlit
+hide_streamlit_style = """
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 # Cargar CSS
 def cargar_css(file_name):
     if os.path.exists(file_name):
@@ -81,7 +91,7 @@ with tab1:
     st.markdown('<div><span class="badge-modulo">MÓDULO 0</span><b style="color: #0f172a; font-size: 15px;">Datos Administrativos de la Consulta</b></div><br>', unsafe_allow_html=True)
     c0_1, c0_2, c0_3 = st.columns(3)
     with c0_1:
-        hc_num = st.text_input("HISTORIA CLÍNICA N°", "HC-2026-001")
+        hc_num = st.text_input("HISTORIA CLÍNICA N°", value="HC-2026-001")
     with c0_2:
         fecha_hc = st.date_input(
             "FECHA DE ATENCIÓN", 
@@ -90,7 +100,7 @@ with tab1:
             max_value=date(2030, 12, 31)
         )
     with c0_3:
-        eps = st.text_input("EPS DEL PACIENTE", "Nueva EPS")
+        eps = st.text_input("EPS DEL PACIENTE", value="")
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
@@ -99,37 +109,37 @@ with tab1:
 
     c1_1, c1_2, c1_3 = st.columns(3)
     with c1_1:
-        nombre_paciente = st.text_input("Nombre del Paciente (Completo)")
-        tipo_doc = st.selectbox("Tipo de Documento", ["CC", "TI", "RC", "MS", "CE", "PA", "ASI"])
+        nombre_paciente = st.text_input("Nombre del Paciente (Completo)", value="")
+        tipo_doc = st.selectbox("Tipo de Documento", ["Seleccione...", "CC", "TI", "RC", "MS", "CE", "PA", "ASI"])
         sexo = st.radio("Sexo", ["Hombre", "Mujer"], index=None, horizontal=True)
-        tipo_plan = st.selectbox("Tipo de Plan", ["POS", "POS SUBS.", "PREPAGO", "OTRO"])
+        tipo_plan = st.selectbox("Tipo de Plan", ["Seleccione...", "POS", "POS SUBS.", "PREPAGO", "OTRO"])
 
     with c1_2:
-        num_doc = st.text_input("N° de Documento")
+        num_doc = st.text_input("N° de Documento", value="")
         fecha_nac = st.date_input(
             "Fecha de Nacimiento", 
             value=date(2000, 1, 1),
             min_value=date(1920, 1, 1),
             max_value=date.today()
         )
-        edad = st.number_input("Edad (Años)", min_value=0, max_value=120, value=18)
-        condicion_usuario = st.selectbox("Condición del Usuario", ["COTIZANTE", "BENEFICIARIO", "PENSIONADO", "OTRO"])
+        edad = st.number_input("Edad (Años)", min_value=0, max_value=120, value=0)
+        condicion_usuario = st.selectbox("Condición del Usuario", ["Seleccione...", "COTIZANTE", "BENEFICIARIO", "PENSIONADO", "OTRO"])
 
     with c1_3:
-        direccion = st.text_input("Dirección de Vivienda")
-        telefono = st.text_input("Teléfono de Contacto")
-        ciudad_depto = st.text_input("Ciudad / Departamento", "Neiva / Huila")
-        estado_civil = st.selectbox("Estado Civil", ["Soltero", "Casado", "Otro"])
-        ocupacion = st.text_input("Ocupación", "Estudiante")
+        direccion = st.text_input("Dirección de Vivienda", value="")
+        telefono = st.text_input("Teléfono de Contacto", value="")
+        ciudad_depto = st.text_input("Ciudad / Departamento", value="Neiva / Huila")
+        estado_civil = st.selectbox("Estado Civil", ["Seleccione...", "Soltero", "Casado", "Otro"])
+        ocupacion = st.text_input("Ocupación", value="")
 
     st.markdown('<span class="subseccion-titulo">➖ ACOMPAÑANTE Y RESPONSABLE</span><br><br>', unsafe_allow_html=True)
     c1_4, c1_5 = st.columns(2)
     with c1_4:
-        nombre_acomp = st.text_input("Nombre del Acompañante")
-        tel_acomp = st.text_input("Teléfono Acompañante")
+        nombre_acomp = st.text_input("Nombre del Acompañante", value="")
+        tel_acomp = st.text_input("Teléfono Acompañante", value="")
     with c1_5:
-        nombre_resp = st.text_input("Nombre del Responsable")
-        tel_resp = st.text_input("Teléfono Responsable")
+        nombre_resp = st.text_input("Nombre del Responsable", value="")
+        tel_resp = st.text_input("Teléfono Responsable", value="")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -137,8 +147,8 @@ with tab1:
 with tab2:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 2</span><b style="color: #0f172a; font-size: 15px;">Anamnesis y Antecedentes Médicos</b></div><br>', unsafe_allow_html=True)
-    motivo = st.text_area("Motivo de Consulta (Textual del paciente)", placeholder="Ej: Presenta dolor agudo en molar inferior...")
-    enfermedad_actual = st.text_area("Historia de la Enfermedad Actual", placeholder="Describa el inicio, frecuencia y evolución...")
+    motivo = st.text_area("Motivo de Consulta (Textual del paciente)", value="", placeholder="Ej: Presenta dolor agudo en molar inferior...")
+    enfermedad_actual = st.text_area("Historia de la Enfermedad Actual", value="", placeholder="Describa el inicio, frecuencia y evolución...")
 
     st.markdown('<span class="subseccion-titulo">➖ ANTECEDENTES MÉDICOS (DILIGENCIAR CADA ÍTEM)</span><br><br>', unsafe_allow_html=True)
     
@@ -162,17 +172,17 @@ with tab2:
                 key=f"ant_{i}"
             )
 
-    obs_antecedentes = st.text_area("Observaciones de Antecedentes Médicos")
+    obs_antecedentes = st.text_area("Observaciones de Antecedentes Médicos", value="")
 
     st.markdown('<span class="subseccion-titulo">➖ HIGIENE ORAL Y SALUD BUCAL</span><br><br>', unsafe_allow_html=True)
     c_hig1, c_hig2, c_hig3 = st.columns(3)
     with c_hig1:
         u_visita_fecha = st.date_input("Última visita al Odontólogo", value=date.today())
-        u_visita_motivo = st.text_input("Motivo última visita")
+        u_visita_motivo = st.text_input("Motivo última visita", value="")
         higiene_oral_est = st.radio("Higiene Oral General", ["Bueno (B)", "Regular (R)", "Malo (M)"], index=None, horizontal=True)
     with c_hig2:
         cepillo_dental = st.radio("¿Usa Cepillo Dental?", ["SI", "NO"], index=None, horizontal=True)
-        veces_al_dia = st.number_input("¿Cuántas veces al día?", min_value=0, max_value=10, value=3)
+        veces_al_dia = st.number_input("¿Cuántas veces al día?", min_value=0, max_value=10, value=0)
     with c_hig3:
         seda_dental = st.radio("¿Usa Seda Dental?", ["SI", "NO"], index=None, horizontal=True)
         enjuagues = st.radio("¿Usa Enjuagues Bucales?", ["SI", "NO"], index=None, horizontal=True)
@@ -223,7 +233,7 @@ with tab3:
         hallaz_ortodoncia = st.checkbox("Ortodoncia")
         hallaz_protesis = st.checkbox("Prótesis")
 
-    obs_examen_fisico = st.text_area("Observaciones del Examen Físico")
+    obs_examen_fisico = st.text_area("Observaciones del Examen Físico", value="")
 
     st.markdown('<span class="subseccion-titulo">➖ HÁBITOS ALIMENTICIOS</span><br><br>', unsafe_allow_html=True)
     c_ali1, c_ali2 = st.columns(2)
@@ -279,7 +289,8 @@ with tab4:
         ])
         superficies_sel = st.multiselect("Superficies", ["Oclusal/Incisal", "Mesial", "Distal", "Vestibular", "Palatino/Lingual"])
     with od3:
-        obs_diente = st.text_input("Observación", "Sensibilidad leve")
+        obs_diente = st.text_input("Observación", value="")
+        st.write("")
         st.write("")
         if st.button("➕ AGREGAR HALLAZGO"):
             sup_str = ", ".join(superficies_sel) if superficies_sel else "Pieza Completa"
@@ -302,28 +313,28 @@ with tab4:
         rx_oclusal = st.number_input("Rx Oclusal (Placas)", min_value=0, value=0)
     with rx2:
         rx_panoramica = st.number_input("Rx Panorámica", min_value=0, value=0)
-        rx_otra = st.text_input("Otra Radiografía", "Ninguna")
+        rx_otra = st.text_input("Otra Radiografía", value="")
     with rx3:
         placas_tomadas = st.number_input("Placas Tomadas", min_value=0, value=0)
         placas_danadas = st.number_input("Placas Dañadas", min_value=0, value=0)
     with rx4:
-        pct_placa_bacteriana = st.number_input("% Placa Bacteriana", min_value=0, max_value=100, value=15)
-        pronostico_gral = st.selectbox("Pronóstico", ["Favorable", "Desfavorable"])
+        pct_placa_bacteriana = st.number_input("% Placa Bacteriana", min_value=0, max_value=100, value=0)
+        pronostico_gral = st.selectbox("Pronóstico", ["Seleccione...", "Favorable", "Desfavorable"])
 
     st.markdown('<span class="subseccion-titulo">➖ DIAGNÓSTICOS Y PLAN GENERAL</span><br><br>', unsafe_allow_html=True)
     cd1, cd2 = st.columns(2)
     with cd1:
-        diag_presuntivo = st.text_input("Diagnóstico Presuntivo")
-        diag_principal = st.text_input("Diagnóstico Principal Definitivo")
-        cod_principal = st.text_input("Código CIE-10 Principal", "K02.1")
+        diag_presuntivo = st.text_input("Diagnóstico Presuntivo", value="")
+        diag_principal = st.text_input("Diagnóstico Principal Definitivo", value="")
+        cod_principal = st.text_input("Código CIE-10 Principal", value="")
     with cd2:
-        diag_secundario = st.text_input("Diagnóstico Secundario")
-        cod_secundario = st.text_input("Código CIE-10 Secundario", "K05.1")
-        citas_programar = st.number_input("No. Citas a Programar", min_value=1, value=3)
+        diag_secundario = st.text_input("Diagnóstico Secundario", value="")
+        cod_secundario = st.text_input("Código CIE-10 Secundario", value="")
+        citas_programar = st.number_input("No. Citas a Programar", min_value=1, value=1)
 
     st.markdown("**Áreas del Plan de Tratamiento:**")
-    plan_areas = st.multiselect("Marcar Especialidades Requeridas", ["Promoción y Prevención", "Operatoria", "Endodoncia", "Cirugía", "Rehabilitación", "Otro"], default=["Promoción y Prevención", "Operatoria"])
-    desc_plan_tratamiento = st.text_area("Descripción Detallada del Plan de Tratamiento")
+    plan_areas = st.multiselect("Marcar Especialidades Requeridas", ["Promoción y Prevención", "Operatoria", "Endodoncia", "Cirugía", "Rehabilitación", "Otro"])
+    desc_plan_tratamiento = st.text_area("Descripción Detallada del Plan de Tratamiento", value="")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -334,9 +345,9 @@ with tab5:
     col_ev1, col_ev2, col_ev3 = st.columns([1, 1, 2])
     with col_ev1:
         fecha_ev = st.date_input("Fecha Tratamiento", value=date.today())
-        diente_ev = st.text_input("Diente / Sitio / Cavidad", "16 Oclusal")
+        diente_ev = st.text_input("Diente / Sitio / Cavidad", value="")
     with col_ev2:
-        tratamiento_ejecutado = st.text_input("Tratamiento Ejecutado en Sesión")
+        tratamiento_ejecutado = st.text_input("Tratamiento Ejecutado en Sesión", value="")
     with col_ev3:
         st.write("")
         st.write("")
@@ -387,6 +398,7 @@ with tab6:
             
             obs_consentimiento_adicional = st.text_area(
                 "Observaciones particulares / Comentarios adicionales del procedimiento:",
+                value="",
                 placeholder="Ej: Paciente presenta ligera sensibilidad previa en cuadrante 2...",
                 key="obs_ho"
             )
@@ -413,10 +425,11 @@ with tab6:
             with c_fl1:
                 fecha_proxima_fluor = st.date_input("Fecha programada para próxima aplicación (6 meses):", value=date.today())
             with c_fl2:
-                reacciones_previas_fluor = st.text_input("Antecedentes de alergia/reacción a barniz:", "Ninguna")
+                reacciones_previas_fluor = st.text_input("Antecedentes de alergia/reacción a barniz:", value="")
             
             obs_consentimiento_adicional = st.text_area(
                 "Notas o recomendaciones específicas adicionadas:",
+                value="",
                 placeholder="Ej: Aplicación focalizada en molares superiores...",
                 key="obs_fl"
             )
@@ -438,12 +451,13 @@ with tab6:
             
             col_ras1, col_ras2 = st.columns(2)
             with col_ras1:
-                instrumentos_usados = st.multiselect("Instrumental a emplear:", ["Instrumentos Manuales", "Instrumentos Sónicos", "Instrumentos Ultrasónicos"], default=["Instrumentos Manuales", "Instrumentos Ultrasónicos"])
+                instrumentos_usados = st.multiselect("Instrumental a emplear:", ["Instrumentos Manuales", "Instrumentos Sónicos", "Instrumentos Ultrasónicos"])
             with col_ras2:
-                zonas_raspaje = st.text_input("Sectores / Cuadrantes a tratar:", "Toda la cavidad oral")
+                zonas_raspaje = st.text_input("Sectores / Cuadrantes a tratar:", value="")
             
             obs_consentimiento_adicional = st.text_area(
                 "Observaciones o hallazgos adicionales antes del procedimiento:",
+                value="",
                 placeholder="Ej: Se evidencia sangrado gingival en sector anterior...",
                 key="obs_rs"
             )
@@ -471,8 +485,8 @@ with tab6:
 
     with col_f2:
         st.markdown("**Firma del Higienista / Estudiante / Odontólogo**")
-        nombre_odonto = st.text_input("Nombre del Profesional / Estudiante")
-        tarjeta_prof = st.text_input("Registro / Código Profesional")
+        nombre_odonto = st.text_input("Nombre del Profesional / Estudiante", value="")
+        tarjeta_prof = st.text_input("Registro / Código Profesional", value="")
         file_firma_odonto = st.file_uploader("Adjuntar firma del profesional (PNG, JPG, PDF)", type=["png", "jpg", "jpeg", "pdf"], key="file_odo")
         if file_firma_odonto and file_firma_odonto.type != "application/pdf":
             st.image(file_firma_odonto, width=160)
@@ -540,7 +554,7 @@ with tab6:
             st.download_button(
                 label="📕 DESCARGAR PDF COMPLETO CON HISTORIA Y CONSENTIMIENTO",
                 data=pdf_data,
-                file_name=f"HC_{num_doc if num_doc else '000'}_{nombre_paciente if nombre_paciente else 'Paciente'}.pdf",
+                file_name="Historia_Clinica_San_Pedro_Claver.pdf",
                 mime="application/pdf",
                 use_container_width=True
             )
