@@ -156,3 +156,19 @@ div[role="radiogroup"] label p {
     color: #0f766e !important;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+/* --- Ajuste responsivo para celulares --- */
+@media (max-width: 768px) {
+    /* Evita que los títulos se rompan letra por letra en móviles */
+    h1, h2, h3, .stCardModule h1, .stCardModule h2 {
+        font-size: 1.2rem !important;
+        word-break: normal !important;
+        overflow-wrap: break-word !important;
+        white-space: normal !important;
+    }
+    
+    /* Ajusta el ancho de las tarjetas para que no se salgan de la pantalla del celular */
+    .stCardModule {
+        padding: 10px !important;
+        margin: 5px 0 !important;
+    }
+}
