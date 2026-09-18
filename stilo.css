@@ -1,9 +1,8 @@
-/* Eliminar el espacio en blanco gigante superior de Streamlit */
+/* Eliminar el espacio en blanco superior de Streamlit */
 .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
     background-color: #f0f8ff !important;
 }
 
-/* Reducir el margen superior de toda la vista de Streamlit para subirlo */
 [data-testid="stMainBlockContainer"] {
     padding-top: 1rem !important;
 }
@@ -13,10 +12,10 @@ html, body, [class*="css"] {
     color: #1e293b !important;
 }
 
-/* Header Banner Institucional más grandecito y llamativo */
+/* Header Banner Institucional */
 .header-banner {
     background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
-    padding: 1.75rem 2.25rem; /* Más alto y espacioso */
+    padding: 1.75rem 2.25rem;
     border-radius: 14px;
     display: flex;
     justify-content: space-between;
@@ -28,7 +27,7 @@ html, body, [class*="css"] {
 
 .header-title {
     color: #ffffff !important;
-    font-size: 1.85rem !important; /* Título más grande */
+    font-size: 1.85rem !important;
     font-weight: 800 !important;
     margin: 0 !important;
     letter-spacing: -0.02em;
@@ -36,7 +35,7 @@ html, body, [class*="css"] {
 
 .header-subtitle {
     color: #ccfbf1 !important;
-    font-size: 1rem !important; /* Subtítulo más legible */
+    font-size: 1rem !important;
     margin: 0.35rem 0 0 0 !important;
     font-weight: 500;
 }
@@ -50,6 +49,7 @@ html, body, [class*="css"] {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    white-space: nowrap;
 }
 
 /* Subheader Estado */
@@ -117,7 +117,6 @@ label p {
     font-size: 0.85rem !important;
 }
 
-/* Radio buttons mejorados */
 div[role="radiogroup"] label p {
     font-weight: 500 !important;
     color: #1e293b !important;
@@ -163,17 +162,29 @@ div[role="radiogroup"] label p {
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* --- Ajuste responsivo para celulares --- */
+/* --- Ajuste responsivo avanzado para celulares --- */
 @media (max-width: 768px) {
-    h1, h2, h3, .stCardModule h1, .stCardModule h2 {
-        font-size: 1.2rem !important;
-        word-break: normal !important;
-        overflow-wrap: break-word !important;
-        white-space: normal !important;
+    /* Hacer el banner flexible en columna para móviles */
+    .header-banner {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        padding: 1.25rem !important;
+        gap: 12px;
     }
-    
+
+    /* Reducir tamaño del título en celulares para que no se desborde */
+    .header-title {
+        font-size: 1.25rem !important;
+        line-height: 1.3 !important;
+    }
+
+    .header-subtitle {
+        font-size: 0.85rem !important;
+    }
+
+    /* Ajustar el padding de las tarjetas */
     .stCardModule {
-        padding: 10px !important;
+        padding: 12px !important;
         margin: 5px 0 !important;
     }
 }
