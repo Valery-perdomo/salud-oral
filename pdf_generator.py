@@ -129,7 +129,7 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
         t_odonto.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,0), SECONDARY_COLOR), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('GRID', (0,0), (-1,-1), 0.5, BORDER_COLOR), ('TOPPADDING', (0,0), (-1,-1), 1.5), ('BOTTOMPADDING', (0,0), (-1,-1), 1.5)]))
         story.append(t_odonto)
 
-    # EVOLUCIÓN
+    # EVOLUCIÓN (Protegida con esc())
     story.append(Paragraph("4. REGISTRO DE EVOLUCIÓN CLÍNICA", section_title_style))
     if evoluciones:
         evo_data = [["Fecha", "Diente/Sitio", "Tratamiento Ejecutado"]]
