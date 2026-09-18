@@ -9,7 +9,6 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
 def procesar_imagen_firma(file_obj, width=130, height=40):
-    """Procesa de forma segura cualquier archivo de imagen de Streamlit."""
     if file_obj is None:
         return ""
     try:
@@ -23,6 +22,12 @@ def procesar_imagen_firma(file_obj, width=130, height=40):
     except Exception as e:
         print(f"Error cargando imagen: {e}")
     return ""
+
+def esc(valor):
+    """Función de apoyo para escapar texto de forma segura para ReportLab."""
+    if valor is None:
+        return ""
+    return html.escape(str(valor))
 
 def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=None, firma_odonto_file=None):
     buffer = io.BytesIO()
@@ -65,7 +70,6 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
 
     story = []
 
-    # Cargar las firmas (o dejar vacío si no hay foto)
     img_pac = procesar_imagen_firma(firma_paciente_file, width=120, height=35)
     img_odo = procesar_imagen_firma(firma_odonto_file, width=120, height=35)
 
@@ -75,11 +79,11 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
     header_data = [
         [
             Paragraph("<b>ESCUELA DE SALUD SAN PEDRO CLAVER</b>", title_style),
-            Paragraph(f"<b>HISTORIA CLÍNICA N°:</b> {datos_hc.get('Historia Clínica N°', 'HC-2026-001')}", ParagraphStyle('HCNum', parent=title_style, fontSize=9.5, alignment=2))
+            Paragraph(f"<b>HISTORIA CLÍNICA N°:</b> {esc(datos_hc.get('Historia Clínica N°', 'HC-2026-001'))}", ParagraphStyle('HCNum', parent=title_style, fontSize=9.5, alignment=2))
         ],
         [
             Paragraph("Sede Neiva — Programa Técnico en Salud Oral", header_sub_style),
-            Paragraph(f"<b>Fecha de Atención:</b> {datos_hc.get('Fecha de Atención', '')}", header_sub_style)
+            Paragraph(f"<b>Fecha de Atención:</b> {esc(datos_hc.get('Fecha de Atención', ''))}", header_sub_style)
         ]
     ]
     t_header = Table(header_data, colWidths=[340, 200])
@@ -90,10 +94,10 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
     # DATOS IDENTIFICACIÓN
     story.append(Paragraph("1. DATOS DE IDENTIFICACIÓN DEL PACIENTE", section_title_style))
     datos_paciente = [
-        [Paragraph(f"<b>Paciente:</b> {datos_hc.get('Paciente', '')}", body_style), Paragraph(f"<b>Documento:</b> {datos_hc.get('Tipo Doc', '')}-{datos_hc.get('Documento Paciente', '')}", body_style), Paragraph(f"<b>Edad:</b> {datos_hc.get('Edad', '')} años", body_style)],
-        [Paragraph(f"<b>Fecha Nac:</b> {datos_hc.get('Fecha Nacimiento', '')}", body_style), Paragraph(f"<b>Sexo:</b> {datos_hc.get('Sexo', '')}", body_style), Paragraph(f"<b>Estado Civil:</b> {datos_hc.get('Estado Civil', '')}", body_style)],
-        [Paragraph(f"<b>Teléfono:</b> {datos_hc.get('Teléfono', '')}", body_style), Paragraph(f"<b>Dirección:</b> {datos_hc.get('Dirección', '')}", body_style), Paragraph(f"<b>Ciudad:</b> {datos_hc.get('Ciudad/Departamento', '')}", body_style)],
-        [Paragraph(f"<b>EPS:</b> {datos_hc.get('EPS', '')}", body_style), Paragraph(f"<b>Ocupación:</b> {datos_hc.get('Ocupación', '')}", body_style), Paragraph(f"<b>Plan/Condición:</b> {datos_hc.get('Tipo Plan', '')} / {datos_hc.get('Condición Usuario', '')}", body_style)]
+        [Paragraph(f"<b>Paciente:</b> {esc(datos_hc.get('Paciente', ''))}", body_style), Paragraph(f"<b>Documento:</b> {esc(datos_hc.get('Tipo Doc', ''))}-{esc(datos_hc.get('Documento Paciente', ''))}", body_style), Paragraph(f"<b>Edad:</b> {esc(datos_hc.get('Edad', ''))} años", body_style)],
+        [Paragraph(f"<b>Fecha Nac:</b> {esc(datos_hc.get('Fecha Nacimiento', ''))}", body_style), Paragraph(f"<b>Sexo:</b> {esc(datos_hc.get('Sexo', ''))}", body_style), Paragraph(f"<b>Estado Civil:</b> {esc(datos_hc.get('Estado Civil', ''))}", body_style)],
+        [Paragraph(f"<b>Teléfono:</b> {esc(datos_hc.get('Teléfono', ''))}", body_style), Paragraph(f"<b>Dirección:</b> {esc(datos_hc.get('Dirección', ''))}", body_style), Paragraph(f"<b>Ciudad:</b> {esc(datos_hc.get('Ciudad/Departamento', ''))}", body_style)],
+        [Paragraph(f"<b>EPS:</b> {esc(datos_hc.get('EPS', ''))}", body_style), Paragraph(f"<b>Ocupación:</b> {esc(datos_hc.get('Ocupación', ''))}", body_style), Paragraph(f"<b>Plan/Condición:</b> {esc(datos_hc.get('Tipo Plan', ''))} / {esc(datos_hc.get('Condición Usuario', ''))}", body_style)]
     ]
     t_paciente = Table(datos_paciente, colWidths=[190, 190, 160])
     t_paciente.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), NEUTRAL_LIGHT), ('GRID', (0,0), (-1,-1), 0.5, BORDER_COLOR), ('TOPPADDING', (0,0), (-1,-1), 2), ('BOTTOMPADDING', (0,0), (-1,-1), 2)]))
@@ -101,21 +105,26 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
 
     # ANAMNESIS
     story.append(Paragraph("2. ANAMNESIS Y EXAMEN FÍSICO ESTOMATOLÓGICO", section_title_style))
-    story.append(Paragraph(f"<b>Motivo de Consulta:</b> {datos_hc.get('Motivo de Consulta', 'Sin registrar')}", body_style))
-    story.append(Paragraph(f"<b>Enfermedad Actual:</b> {datos_hc.get('Enfermedad Actual', 'No refiere')}", body_style))
-    story.append(Paragraph(f"<b>Higiene Oral:</b> {datos_hc.get('Higiene Oral', '')}", body_style))
-    story.append(Paragraph(f"<b>Examen Dental / Periodontal:</b> {datos_hc.get('Dental', '')} | {datos_hc.get('Periodontal', '')}", body_style))
+    story.append(Paragraph(f"<b>Motivo de Consulta:</b> {esc(datos_hc.get('Motivo de Consulta', 'Sin registrar'))}", body_style))
+    story.append(Paragraph(f"<b>Enfermedad Actual:</b> {esc(datos_hc.get('Enfermedad Actual', 'No refiere'))}", body_style))
+    story.append(Paragraph(f"<b>Higiene Oral:</b> {esc(datos_hc.get('Higiene Oral', ''))}", body_style))
+    story.append(Paragraph(f"<b>Examen Dental / Periodontal:</b> {esc(datos_hc.get('Dental', ''))} | {esc(datos_hc.get('Periodontal', ''))}", body_style))
 
     # DIAGNÓSTICOS Y PLAN
     story.append(Paragraph("3. DIAGNÓSTICOS Y PLAN DE TRATAMIENTO", section_title_style))
-    story.append(Paragraph(f"<b>Diagnósticos (CIE-10):</b> {datos_hc.get('Diags', 'Sin registro')}", body_style))
-    story.append(Paragraph(f"<b>Plan de Tratamiento:</b> {datos_hc.get('Plan Resumen', 'No especificado')}", body_style))
+    story.append(Paragraph(f"<b>Diagnósticos (CIE-10):</b> {esc(datos_hc.get('Diags', 'Sin registro'))}", body_style))
+    story.append(Paragraph(f"<b>Plan de Tratamiento:</b> {esc(datos_hc.get('Plan Resumen', 'No especificado'))}", body_style))
 
     if plan_tratamiento:
         story.append(Spacer(1, 3))
         table_odonto_data = [["Pieza (FDI)", "Hallazgo / Convención", "Superficie", "Observación"]]
         for item in plan_tratamiento:
-            table_odonto_data.append([str(item.get("Diente", "")), str(item.get("Hallazgo", "")), str(item.get("Superficies", "N/A")), str(item.get("Observación", ""))])
+            table_odonto_data.append([
+                esc(item.get("Diente", "")), 
+                esc(item.get("Hallazgo", "")), 
+                esc(item.get("Superficies", "N/A")), 
+                esc(item.get("Observación", ""))
+            ])
         t_odonto = Table(table_odonto_data, colWidths=[70, 150, 110, 210])
         t_odonto.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,0), SECONDARY_COLOR), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('GRID', (0,0), (-1,-1), 0.5, BORDER_COLOR), ('TOPPADDING', (0,0), (-1,-1), 1.5), ('BOTTOMPADDING', (0,0), (-1,-1), 1.5)]))
         story.append(t_odonto)
@@ -125,14 +134,18 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
     if evoluciones:
         evo_data = [["Fecha", "Diente/Sitio", "Tratamiento Ejecutado"]]
         for ev in evoluciones:
-            evo_data.append([str(ev.get("Fecha y Hora", "")), str(ev.get("Diente/Sitio", "")), str(ev.get("Tratamiento Ejecutado", ""))])
+            evo_data.append([
+                esc(ev.get("Fecha y Hora", "")), 
+                esc(ev.get("Diente/Sitio", "")), 
+                esc(ev.get("Tratamiento Ejecutado", ""))
+            ])
         t_evo = Table(evo_data, colWidths=[90, 110, 340])
         t_evo.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,0), PRIMARY_COLOR), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('GRID', (0,0), (-1,-1), 0.5, BORDER_COLOR), ('TOPPADDING', (0,0), (-1,-1), 2), ('BOTTOMPADDING', (0,0), (-1,-1), 2)]))
         story.append(t_evo)
     else:
         story.append(Paragraph("Sin novedades registradas en esta consulta.", body_style))
 
-    # FIRMAS OBLIGATORIAS AL FINAL DE LA HISTORIA CLÍNICA (SIEMPRE SE MUESTRAN)
+    # FIRMAS OBLIGATORIAS
     story.append(Spacer(1, 15))
     story.append(Paragraph("5. CONSTANCIA Y FIRMAS DE CONFORMIDAD", section_title_style))
     story.append(Spacer(1, 10))
@@ -141,8 +154,8 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
         [img_pac if img_pac != "" else Paragraph("", body_style), img_odo if img_odo != "" else Paragraph("", body_style)],
         ["_______________________________________", "_______________________________________"],
         [
-            Paragraph(f"<b>Paciente / Acudiente:</b><br/>{datos_hc.get('Paciente', '')}<br/>Doc: {datos_hc.get('Tipo Doc', '')} {datos_hc.get('Documento Paciente', '')}", body_style),
-            Paragraph(f"<b>Odontólogo / Estudiante:</b><br/>{datos_hc.get('Odontólogo Tratante', '')}<br/>Reg: {datos_hc.get('Código/Registro', '')}", body_style)
+            Paragraph(f"<b>Paciente / Acudiente:</b><br/>{esc(datos_hc.get('Paciente', ''))}<br/>Doc: {esc(datos_hc.get('Tipo Doc', ''))} {esc(datos_hc.get('Documento Paciente', ''))}", body_style),
+            Paragraph(f"<b>Odontólogo / Estudiante:</b><br/>{esc(datos_hc.get('Odontólogo Tratante', ''))}<br/>Reg: {esc(datos_hc.get('Código/Registro', ''))}", body_style)
         ]
     ]
     t_firmas_hc = Table(firmas_hc_data, colWidths=[270, 270])
@@ -150,7 +163,7 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
     story.append(t_firmas_hc)
 
     # =========================================================================
-    # 2. ANEXO DE CONSENTIMIENTO (SI SE SELECCIONÓ UNO)
+    # 2. ANEXO DE CONSENTIMIENTO
     # =========================================================================
     tipo_cons = datos_hc.get("Consentimiento Tipo", "Ninguno / No aplica para esta consulta")
 
@@ -206,11 +219,11 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
             story.append(Spacer(1, 6))
 
             datos_pie = [
-                [Paragraph(f"<b>Nombre del paciente:</b> {datos_hc.get('Paciente', '')}", cons_body_style), img_pac if img_pac != "" else Paragraph("", body_style)],
-                [Paragraph(f"<b>Documento de identidad:</b> {datos_hc.get('Tipo Doc', '')} {datos_hc.get('Documento Paciente', '')}", cons_body_style), Paragraph("___________________________________", cons_body_style)],
+                [Paragraph(f"<b>Nombre del paciente:</b> {esc(datos_hc.get('Paciente', ''))}", cons_body_style), img_pac if img_pac != "" else Paragraph("", body_style)],
+                [Paragraph(f"<b>Documento de identidad:</b> {esc(datos_hc.get('Tipo Doc', ''))} {esc(datos_hc.get('Documento Paciente', ''))}", cons_body_style), Paragraph("___________________________________", cons_body_style)],
                 [Paragraph(f"<b>Firma del paciente:</b>", cons_body_style), Paragraph("", cons_body_style)],
-                [Paragraph(f"<b>Fecha atención:</b> {datos_hc.get('Fecha de Atención', '')}", cons_body_style), img_odo if img_odo != "" else Paragraph("", body_style)],
-                [Paragraph(f"<b>Nombre del estudiante:</b> {datos_hc.get('Odontólogo Tratante', '')}", cons_body_style), Paragraph("___________________________________", cons_body_style)],
+                [Paragraph(f"<b>Fecha atención:</b> {esc(datos_hc.get('Fecha de Atención', ''))}", cons_body_style), img_odo if img_odo != "" else Paragraph("", body_style)],
+                [Paragraph(f"<b>Nombre del estudiante:</b> {esc(datos_hc.get('Odontólogo Tratante', ''))}", cons_body_style), Paragraph("___________________________________", cons_body_style)],
                 [Paragraph(f"<b>Firma del estudiante:</b>", cons_body_style), Paragraph("", cons_body_style)]
             ]
             t_pie = Table(datos_pie, colWidths=[320, 220])
@@ -225,10 +238,10 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
             story.append(Spacer(1, 6))
 
             info_top = [
-                [Paragraph(f"<b>Nombre y Apellido del Paciente:</b> {datos_hc.get('Paciente', '')}", cons_body_style)],
-                [Paragraph(f"<b>Documento identidad:</b> {datos_hc.get('Tipo Doc', '')} {datos_hc.get('Documento Paciente', '')}", cons_body_style)],
-                [Paragraph(f"<b>Edad:</b> {datos_hc.get('Edad', '')} años", cons_body_style)],
-                [Paragraph(f"<b>Fecha atención:</b> {datos_hc.get('Fecha de Atención', '')}", cons_body_style)]
+                [Paragraph(f"<b>Nombre y Apellido del Paciente:</b> {esc(datos_hc.get('Paciente', ''))}", cons_body_style)],
+                [Paragraph(f"<b>Documento identidad:</b> {esc(datos_hc.get('Tipo Doc', ''))} {esc(datos_hc.get('Documento Paciente', ''))}", cons_body_style)],
+                [Paragraph(f"<b>Edad:</b> {esc(datos_hc.get('Edad', ''))} años", cons_body_style)],
+                [Paragraph(f"<b>Fecha atención:</b> {esc(datos_hc.get('Fecha de Atención', ''))}", cons_body_style)]
             ]
             t_top = Table(info_top, colWidths=[540])
             t_top.setStyle(TableStyle([('TOPPADDING', (0,0), (-1,-1), 1), ('BOTTOMPADDING', (0,0), (-1,-1), 1)]))
@@ -253,8 +266,8 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
                 [img_pac if img_pac != "" else Paragraph("", body_style), img_odo if img_odo != "" else Paragraph("", body_style)],
                 ["_______________________________________", "_______________________________________"],
                 [
-                    Paragraph(f"<b>Firma del paciente</b><br/>{datos_hc.get('Paciente', '')}", cons_body_style),
-                    Paragraph(f"<b>Firma del higienista oral</b><br/>{datos_hc.get('Odontólogo Tratante', '')}", cons_body_style)
+                    Paragraph(f"<b>Firma del paciente</b><br/>{esc(datos_hc.get('Paciente', ''))}", cons_body_style),
+                    Paragraph(f"<b>Firma del higienista oral</b><br/>{esc(datos_hc.get('Odontólogo Tratante', ''))}", cons_body_style)
                 ]
             ]
             t_f_ho = Table(firmas_ho, colWidths=[270, 270])
@@ -269,8 +282,8 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
             story.append(Spacer(1, 6))
 
             info_top = [
-                [Paragraph(f"<b>Nombre y apellido del paciente:</b> {datos_hc.get('Paciente', '')}", cons_body_style), Paragraph(f"<b>Edad:</b> {datos_hc.get('Edad', '')} años", cons_body_style)],
-                [Paragraph(f"<b>Número de identificación:</b> {datos_hc.get('Tipo Doc', '')} {datos_hc.get('Documento Paciente', '')}", cons_body_style), Paragraph(f"<b>Fecha aplicación:</b> {datos_hc.get('Fecha de Atención', '')}", cons_body_style)]
+                [Paragraph(f"<b>Nombre y apellido del paciente:</b> {esc(datos_hc.get('Paciente', ''))}", cons_body_style), Paragraph(f"<b>Edad:</b> {esc(datos_hc.get('Edad', ''))} años", cons_body_style)],
+                [Paragraph(f"<b>Número de identificación:</b> {esc(datos_hc.get('Tipo Doc', ''))} {esc(datos_hc.get('Documento Paciente', ''))}", cons_body_style), Paragraph(f"<b>Fecha aplicación:</b> {esc(datos_hc.get('Fecha de Atención', ''))}", cons_body_style)]
             ]
             t_top = Table(info_top, colWidths=[360, 180])
             t_top.setStyle(TableStyle([('TOPPADDING', (0,0), (-1,-1), 1), ('BOTTOMPADDING', (0,0), (-1,-1), 1)]))
@@ -286,7 +299,7 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
             Certifico que el odontólogo o higienista, éste último bajo la supervisión del odontólogo, me ha explicado el procedimiento a realizar y los cuidados que debo tener posteriormente.<br/>
             Igualmente certifico que me han explicado la importancia de continuar con su aplicación según la valoración de riesgo registrada, para asistir a la próxima aplicación y cumplir con lo acordado durante el año, solicitado por el odontólogo o higienista oral, personal autorizado(s) y capacitado(s) para dichas aplicaciones.<br/><br/>
             He tenido la oportunidad de hacer las preguntas que he considerado necesarias y todas han sido contestadas satisfactoriamente; así como se me ha explicado que, debido al color del barniz, puede presentarse un leve cambio temporal en el color del diente, que el periodo de tratamiento es de 4 horas (debo evitar los alimentos duros o pegajosos, productos con alcohol, enjuagues, bebidas calientes o lavarme los dientes por estas 4 horas) siguientes a la aplicación del barniz y preferiblemente realizar el cepillado dental hasta la mañana siguiente.<br/><br/>
-            <b>Fecha de próxima aplicación:</b> {datos_hc.get('Proxima Cita Fluor', 'N/A')}
+            <b>Fecha de próxima aplicación:</b> {esc(datos_hc.get('Proxima Cita Fluor', 'N/A'))}
             """
             story.append(Paragraph(texto_fl, cons_body_style))
             story.append(Spacer(1, 20))
