@@ -3,7 +3,7 @@
 
 /* Forzar el fondo azul clarito sutil en todo Streamlit */
 .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-    background-color: #bafff8 !important;
+    background-color: #f0f8ff !important;
 }
 
 html, body, [class*="css"] {
