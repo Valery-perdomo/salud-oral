@@ -38,7 +38,10 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
         rightMargin=36,
         leftMargin=36,
         topMargin=30,
-        bottomMargin=30
+        bottomMargin=30,
+        title="Historia Clínica - Escuela de Salud San Pedro Claver",  # Título para la pestaña del navegador
+        author="Sistema de Salud Oral",                                 # Autor del documento
+        subject="Expediente Clínico Odontológico"                      # Asunto
     )
 
     styles = getSampleStyleSheet()
