@@ -1,9 +1,13 @@
 /* Importar tipografía moderna y profesional */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+/* Forzar el fondo azul clarito sutil en todo Streamlit */
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+    background-color: #f0f8ff !important;
+}
+
 html, body, [class*="css"] {
     font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-    background-color: #00a6ff !important; /* Fondo general azul clarito sutil */
     color: #1e293b !important;
 }
 
@@ -59,10 +63,10 @@ html, body, [class*="css"] {
     margin-bottom: 1.5rem;
 }
 
-/* Tarjetas de Módulos con sutil reflejo azulado */
+/* Tarjetas de Módulos */
 .stCardModule {
     background-color: #ffffff;
-    border: 1px solid #dbeafe; /* Borde azul muy sutil */
+    border: 1px solid #bae6fd; /* Borde azul claro */
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
@@ -159,7 +163,6 @@ div[role="radiogroup"] label p {
 
 /* --- Ajuste responsivo para celulares --- */
 @media (max-width: 768px) {
-    /* Evita que los títulos se rompan letra por letra en móviles */
     h1, h2, h3, .stCardModule h1, .stCardModule h2 {
         font-size: 1.2rem !important;
         word-break: normal !important;
@@ -167,7 +170,6 @@ div[role="radiogroup"] label p {
         white-space: normal !important;
     }
     
-    /* Ajusta el ancho de las tarjetas para que no se salgan de la pantalla del celular */
     .stCardModule {
         padding: 10px !important;
         margin: 5px 0 !important;
