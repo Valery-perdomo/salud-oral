@@ -68,7 +68,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Inicializar estados de sesión
+# Inicializar estados de sesión y limpieza de formularios
 if "evoluciones" not in st.session_state:
     st.session_state.evoluciones = []
 
@@ -91,16 +91,17 @@ with tab1:
     st.markdown('<div><span class="badge-modulo">MÓDULO 0</span><b style="color: #0f172a; font-size: 15px;">Datos Administrativos de la Consulta</b></div><br>', unsafe_allow_html=True)
     c0_1, c0_2, c0_3 = st.columns(3)
     with c0_1:
-        hc_num = st.text_input("HISTORIA CLÍNICA N°", value="HC-2026-001")
+        hc_num = st.text_input("HISTORIA CLÍNICA N°", value="HC-2026-001", key="input_hc_num")
     with c0_2:
         fecha_hc = st.date_input(
             "FECHA DE ATENCIÓN", 
             value=date.today(),
             min_value=date(2020, 1, 1),
-            max_value=date(2030, 12, 31)
+            max_value=date(2030, 12, 31),
+            key="input_fecha_hc"
         )
     with c0_3:
-        eps = st.text_input("EPS DEL PACIENTE", value="")
+        eps = st.text_input("EPS DEL PACIENTE", value="", placeholder="Escribe la EPS...", key="input_eps")
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
@@ -109,37 +110,38 @@ with tab1:
 
     c1_1, c1_2, c1_3 = st.columns(3)
     with c1_1:
-        nombre_paciente = st.text_input("Nombre del Paciente (Completo)", value="")
-        tipo_doc = st.selectbox("Tipo de Documento", ["Seleccione...", "CC", "TI", "RC", "MS", "CE", "PA", "ASI"])
-        sexo = st.radio("Sexo", ["Hombre", "Mujer"], index=None, horizontal=True)
-        tipo_plan = st.selectbox("Tipo de Plan", ["Seleccione...", "POS", "POS SUBS.", "PREPAGO", "OTRO"])
+        nombre_paciente = st.text_input("Nombre del Paciente (Completo)", value="", placeholder="Nombre completo...", key="input_nombre")
+        tipo_doc = st.selectbox("Tipo de Documento", ["Seleccione...", "CC", "TI", "RC", "MS", "CE", "PA", "ASI"], key="input_tipodoc")
+        sexo = st.radio("Sexo", ["Hombre", "Mujer"], index=None, horizontal=True, key="input_sexo")
+        tipo_plan = st.selectbox("Tipo de Plan", ["Seleccione...", "POS", "POS SUBS.", "PREPAGO", "OTRO"], key="input_tipplan")
 
     with c1_2:
-        num_doc = st.text_input("N° de Documento", value="")
+        num_doc = st.text_input("N° de Documento", value="", placeholder="Número de documento...", key="input_numdoc")
         fecha_nac = st.date_input(
             "Fecha de Nacimiento", 
             value=date(2000, 1, 1),
             min_value=date(1920, 1, 1),
-            max_value=date.today()
+            max_value=date.today(),
+            key="input_fechanac"
         )
-        edad = st.number_input("Edad (Años)", min_value=0, max_value=120, value=0)
-        condicion_usuario = st.selectbox("Condición del Usuario", ["Seleccione...", "COTIZANTE", "BENEFICIARIO", "PENSIONADO", "OTRO"])
+        edad = st.number_input("Edad (Años)", min_value=0, max_value=120, value=0, key="input_edad")
+        condicion_usuario = st.selectbox("Condición del Usuario", ["Seleccione...", "COTIZANTE", "BENEFICIARIO", "PENSIONADO", "OTRO"], key="input_condicion")
 
     with c1_3:
-        direccion = st.text_input("Dirección de Vivienda", value="")
-        telefono = st.text_input("Teléfono de Contacto", value="")
-        ciudad_depto = st.text_input("Ciudad / Departamento", value="Neiva / Huila")
-        estado_civil = st.selectbox("Estado Civil", ["Seleccione...", "Soltero", "Casado", "Otro"])
-        ocupacion = st.text_input("Ocupación", value="")
+        direccion = st.text_input("Dirección de Vivienda", value="", placeholder="Dirección...", key="input_dir")
+        telefono = st.text_input("Teléfono de Contacto", value="", placeholder="Teléfono...", key="input_tel")
+        ciudad_depto = st.text_input("Ciudad / Departamento", value="Neiva / Huila", key="input_ciudad")
+        estado_civil = st.selectbox("Estado Civil", ["Seleccione...", "Soltero", "Casado", "Otro"], key="input_estcivil")
+        ocupacion = st.text_input("Ocupación", value="", placeholder="Ocupación...", key="input_ocupacion")
 
     st.markdown('<span class="subseccion-titulo">➖ ACOMPAÑANTE Y RESPONSABLE</span><br><br>', unsafe_allow_html=True)
     c1_4, c1_5 = st.columns(2)
     with c1_4:
-        nombre_acomp = st.text_input("Nombre del Acompañante", value="")
-        tel_acomp = st.text_input("Teléfono Acompañante", value="")
+        nombre_acomp = st.text_input("Nombre del Acompañante", value="", key="input_acomp")
+        tel_acomp = st.text_input("Teléfono Acompañante", value="", key="input_telacomp")
     with c1_5:
-        nombre_resp = st.text_input("Nombre del Responsable", value="")
-        tel_resp = st.text_input("Teléfono Responsable", value="")
+        nombre_resp = st.text_input("Nombre del Responsable", value="", key="input_resp")
+        tel_resp = st.text_input("Teléfono Responsable", value="", key="input_telresp")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -147,8 +149,8 @@ with tab1:
 with tab2:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 2</span><b style="color: #0f172a; font-size: 15px;">Anamnesis y Antecedentes Médicos</b></div><br>', unsafe_allow_html=True)
-    motivo = st.text_area("Motivo de Consulta (Textual del paciente)", value="", placeholder="Ej: Presenta dolor agudo en molar inferior...")
-    enfermedad_actual = st.text_area("Historia de la Enfermedad Actual", value="", placeholder="Describa el inicio, frecuencia y evolución...")
+    motivo = st.text_area("Motivo de Consulta (Textual del paciente)", value="", placeholder="Ej: Presenta dolor agudo en molar inferior...", key="input_motivo")
+    enfermedad_actual = st.text_area("Historia de la Enfermedad Actual", value="", placeholder="Describa el inicio, frecuencia y evolución...", key="input_enfermedad")
 
     st.markdown('<span class="subseccion-titulo">➖ ANTECEDENTES MÉDICOS (DILIGENCIAR CADA ÍTEM)</span><br><br>', unsafe_allow_html=True)
     
@@ -172,20 +174,20 @@ with tab2:
                 key=f"ant_{i}"
             )
 
-    obs_antecedentes = st.text_area("Observaciones de Antecedentes Médicos", value="")
+    obs_antecedentes = st.text_area("Observaciones de Antecedentes Médicos", value="", key="input_obsant")
 
     st.markdown('<span class="subseccion-titulo">➖ HIGIENE ORAL Y SALUD BUCAL</span><br><br>', unsafe_allow_html=True)
     c_hig1, c_hig2, c_hig3 = st.columns(3)
     with c_hig1:
-        u_visita_fecha = st.date_input("Última visita al Odontólogo", value=date.today())
-        u_visita_motivo = st.text_input("Motivo última visita", value="")
-        higiene_oral_est = st.radio("Higiene Oral General", ["Bueno (B)", "Regular (R)", "Malo (M)"], index=None, horizontal=True)
+        u_visita_fecha = st.date_input("Última visita al Odontólogo", value=date.today(), key="input_uvisita")
+        u_visita_motivo = st.text_input("Motivo última visita", value="", key="input_motivovisita")
+        higiene_oral_est = st.radio("Higiene Oral General", ["Bueno (B)", "Regular (R)", "Malo (M)"], index=None, horizontal=True, key="input_higoral")
     with c_hig2:
-        cepillo_dental = st.radio("¿Usa Cepillo Dental?", ["SI", "NO"], index=None, horizontal=True)
-        veces_al_dia = st.number_input("¿Cuántas veces al día?", min_value=0, max_value=10, value=0)
+        cepillo_dental = st.radio("¿Usa Cepillo Dental?", ["SI", "NO"], index=None, horizontal=True, key="input_cepillo")
+        veces_al_dia = st.number_input("¿Cuántas veces al día?", min_value=0, max_value=10, value=0, key="input_veces")
     with c_hig3:
-        seda_dental = st.radio("¿Usa Seda Dental?", ["SI", "NO"], index=None, horizontal=True)
-        enjuagues = st.radio("¿Usa Enjuagues Bucales?", ["SI", "NO"], index=None, horizontal=True)
+        seda_dental = st.radio("¿Usa Seda Dental?", ["SI", "NO"], index=None, horizontal=True, key="input_seda")
+        enjuagues = st.radio("¿Usa Enjuagues Bucales?", ["SI", "NO"], index=None, horizontal=True, key="input_enj")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -219,28 +221,28 @@ with tab3:
     col_p1, col_p2, col_p3 = st.columns(3)
     with col_p1:
         st.markdown("**Examen Dental**")
-        ex_supernumerarios = st.checkbox("Supernumerarios")
-        ex_abrasion = st.checkbox("Abrasión")
-        ex_manchas = st.checkbox("Manchas - Cambios de color")
-        ex_patologia_pulpar = st.checkbox("Patología pulpar - Abscesos")
+        ex_supernumerarios = st.checkbox("Supernumerarios", key="chk_sup")
+        ex_abrasion = st.checkbox("Abrasión", key="chk_abr")
+        ex_manchas = st.checkbox("Manchas - Cambios de color", key="chk_man")
+        ex_patologia_pulpar = st.checkbox("Patología pulpar - Abscesos", key="chk_pul")
     with col_p2:
         st.markdown("**Examen Periodontal**")
-        perio_bolsas = st.checkbox("Bolsas - Movilidad")
-        perio_placa = st.checkbox("Placa blanda")
-        perio_calculos = st.checkbox("Cálculos")
+        perio_bolsas = st.checkbox("Bolsas - Movilidad", key="chk_bol")
+        perio_placa = st.checkbox("Placa blanda", key="chk_pla")
+        perio_calculos = st.checkbox("Cálculos", key="chk_cal")
     with col_p3:
         st.markdown("**Hallazgos Generales**")
-        hallaz_ortodoncia = st.checkbox("Ortodoncia")
-        hallaz_protesis = st.checkbox("Prótesis")
+        hallaz_ortodoncia = st.checkbox("Ortodoncia", key="chk_ort")
+        hallaz_protesis = st.checkbox("Prótesis", key="chk_pro")
 
-    obs_examen_fisico = st.text_area("Observaciones del Examen Físico", value="")
+    obs_examen_fisico = st.text_area("Observaciones del Examen Físico", value="", key="input_obsexam")
 
     st.markdown('<span class="subseccion-titulo">➖ HÁBITOS ALIMENTICIOS</span><br><br>', unsafe_allow_html=True)
     c_ali1, c_ali2 = st.columns(2)
     with c_ali1:
-        ingesta_carbohidratos = st.radio("Ingesta de Carbohidratos (Azúcares / Harinas)", ["Baja", "Media", "Alta (5-7)"], index=None, horizontal=True)
+        ingesta_carbohidratos = st.radio("Ingesta de Carbohidratos (Azúcares / Harinas)", ["Baja", "Media", "Alta (5-7)"], index=None, horizontal=True, key="input_carb")
     with c_ali2:
-        num_comidas = st.radio("Número de Comidas Diarias", ["< 3", "3 - 4", "> 4"], index=None, horizontal=True)
+        num_comidas = st.radio("Número de Comidas Diarias", ["< 3", "3 - 4", "> 4"], index=None, horizontal=True, key="input_com")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -250,7 +252,7 @@ with tab4:
     st.markdown('<div><span class="badge-modulo">MÓDULO 4</span><b style="color: #0f172a; font-size: 16px;">Odontograma y Registro FDI</b></div><br>', unsafe_allow_html=True)
     st.markdown('<span class="subseccion-titulo">➖ ESQUEMA DENTAL Y CONVENCIONES CLÍNICAS</span><br><br>', unsafe_allow_html=True)
 
-    tipo_dentadura = st.radio("Tipo de Dentadura Presente", ["Dentadura Permanente", "Dentadura Temporal", "Dentadura Mixta"], index=None, horizontal=True)
+    tipo_dentadura = st.radio("Tipo de Dentadura Presente", ["Dentadura Permanente", "Dentadura Temporal", "Dentadura Mixta"], index=None, horizontal=True, key="input_dent")
 
     ruta_odontograma = None
     for posible_nombre in ["odontograma.jpg", "odontograma.jpeg", "odontograma.png", "image_318c46.jpg"]:
@@ -274,7 +276,7 @@ with tab4:
             55,54,53,52,51, 61,62,63,64,65,
             85,84,83,82,81, 71,72,73,74,75,
             48,47,46,45,44,43,42,41, 31,32,33,34,35,36,37,38
-        ])
+        ], key="input_dienten")
     with od2:
         hallazgo_hall = st.selectbox("Hallazgo / Convención", [
             "Caries o Recidiva (Rojo)", 
@@ -286,10 +288,10 @@ with tab4:
             "Endodoncia (E)",
             "Incluido",
             "Prótesis Existente (=)"
-        ])
-        superficies_sel = st.multiselect("Superficies", ["Oclusal/Incisal", "Mesial", "Distal", "Vestibular", "Palatino/Lingual"])
+        ], key="input_hallaz")
+        superficies_sel = st.multiselect("Superficies", ["Oclusal/Incisal", "Mesial", "Distal", "Vestibular", "Palatino/Lingual"], key="input_supsel")
     with od3:
-        obs_diente = st.text_input("Observación", value="")
+        obs_diente = st.text_input("Observación", value="", key="input_obsdiente")
         st.write("")
         st.write("")
         if st.button("➕ AGREGAR HALLAZGO"):
@@ -309,32 +311,32 @@ with tab4:
     st.markdown('<span class="subseccion-titulo">➖ AYUDAS DIAGNÓSTICAS Y ÍNDICES</span><br><br>', unsafe_allow_html=True)
     rx1, rx2, rx3, rx4 = st.columns(4)
     with rx1:
-        rx_periapical = st.number_input("Rx Periapical (Placas)", min_value=0, value=0)
-        rx_oclusal = st.number_input("Rx Oclusal (Placas)", min_value=0, value=0)
+        rx_periapical = st.number_input("Rx Periapical (Placas)", min_value=0, value=0, key="input_rxper")
+        rx_oclusal = st.number_input("Rx Oclusal (Placas)", min_value=0, value=0, key="input_rxocl")
     with rx2:
-        rx_panoramica = st.number_input("Rx Panorámica", min_value=0, value=0)
-        rx_otra = st.text_input("Otra Radiografía", value="")
+        rx_panoramica = st.number_input("Rx Panorámica", min_value=0, value=0, key="input_rxpan")
+        rx_otra = st.text_input("Otra Radiografía", value="", key="input_rxotra")
     with rx3:
-        placas_tomadas = st.number_input("Placas Tomadas", min_value=0, value=0)
-        placas_danadas = st.number_input("Placas Dañadas", min_value=0, value=0)
+        placas_tomadas = st.number_input("Placas Tomadas", min_value=0, value=0, key="input_pltom")
+        placas_danadas = st.number_input("Placas Dañadas", min_value=0, value=0, key="input_pldan")
     with rx4:
-        pct_placa_bacteriana = st.number_input("% Placa Bacteriana", min_value=0, max_value=100, value=0)
-        pronostico_gral = st.selectbox("Pronóstico", ["Seleccione...", "Favorable", "Desfavorable"])
+        pct_placa_bacteriana = st.number_input("% Placa Bacteriana", min_value=0, max_value=100, value=0, key="input_pctplaca")
+        pronostico_gral = st.selectbox("Pronóstico", ["Seleccione...", "Favorable", "Desfavorable"], key="input_pron")
 
     st.markdown('<span class="subseccion-titulo">➖ DIAGNÓSTICOS Y PLAN GENERAL</span><br><br>', unsafe_allow_html=True)
     cd1, cd2 = st.columns(2)
     with cd1:
-        diag_presuntivo = st.text_input("Diagnóstico Presuntivo", value="")
-        diag_principal = st.text_input("Diagnóstico Principal Definitivo", value="")
-        cod_principal = st.text_input("Código CIE-10 Principal", value="")
+        diag_presuntivo = st.text_input("Diagnóstico Presuntivo", value="", key="input_diagpres")
+        diag_principal = st.text_input("Diagnóstico Principal Definitivo", value="", key="input_diagprinc")
+        cod_principal = st.text_input("Código CIE-10 Principal", value="", key="input_codprinc")
     with cd2:
-        diag_secundario = st.text_input("Diagnóstico Secundario", value="")
-        cod_secundario = st.text_input("Código CIE-10 Secundario", value="")
-        citas_programar = st.number_input("No. Citas a Programar", min_value=1, value=1)
+        diag_secundario = st.text_input("Diagnóstico Secundario", value="", key="input_diagsec")
+        cod_secundario = st.text_input("Código CIE-10 Secundario", value="", key="input_codsec")
+        citas_programar = st.number_input("No. Citas a Programar", min_value=1, value=1, key="input_citasprog")
 
     st.markdown("**Áreas del Plan de Tratamiento:**")
-    plan_areas = st.multiselect("Marcar Especialidades Requeridas", ["Promoción y Prevención", "Operatoria", "Endodoncia", "Cirugía", "Rehabilitación", "Otro"])
-    desc_plan_tratamiento = st.text_area("Descripción Detallada del Plan de Tratamiento", value="")
+    plan_areas = st.multiselect("Marcar Especialidades Requeridas", ["Promoción y Prevención", "Operatoria", "Endodoncia", "Cirugía", "Rehabilitación", "Otro"], default=[], key="input_planareas")
+    desc_plan_tratamiento = st.text_area("Descripción Detallada del Plan de Tratamiento", value="", key="input_descplan")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -344,10 +346,10 @@ with tab5:
     st.markdown('<div><span class="badge-modulo">MÓDULO 5</span><b style="color: #0f172a; font-size: 15px;">Evolución del Tratamiento</b></div><br>', unsafe_allow_html=True)
     col_ev1, col_ev2, col_ev3 = st.columns([1, 1, 2])
     with col_ev1:
-        fecha_ev = st.date_input("Fecha Tratamiento", value=date.today())
-        diente_ev = st.text_input("Diente / Sitio / Cavidad", value="")
+        fecha_ev = st.date_input("Fecha Tratamiento", value=date.today(), key="input_fechaev")
+        diente_ev = st.text_input("Diente / Sitio / Cavidad", value="", key="input_dienteev")
     with col_ev2:
-        tratamiento_ejecutado = st.text_input("Tratamiento Ejecutado en Sesión", value="")
+        tratamiento_ejecutado = st.text_input("Tratamiento Ejecutado en Sesión", value="", key="input_tratejec")
     with col_ev3:
         st.write("")
         st.write("")
@@ -380,7 +382,8 @@ with tab6:
             "Consentimiento Informado para Aplicación de Flúor Barniz",
             "Consentimiento Informado para Raspaje Supragingival"
         ],
-        index=0
+        index=0,
+        key="input_tipocons"
     )
 
     acepta_consentimiento = False
@@ -413,7 +416,7 @@ with tab6:
             *El paciente declara haber recibido la información completa sobre el procedimiento, sus beneficios, riesgos y cuidados posteriores, y manifiesta estar de acuerdo con su realización.*
             """)
         
-        acepta_consentimiento = st.checkbox("El paciente y/o acudiente declara haber leído, comprendido y ACEPTA la realización de la Higiene Oral.")
+        acepta_consentimiento = st.checkbox("El paciente y/o acudiente declara haber leído, comprendido y ACEPTA la realización de la Higiene Oral.", key="chk_acp1")
 
     elif tipo_consentimiento == "Consentimiento Informado para Aplicación de Flúor Barniz":
         st.info("ℹ️ **Procedimiento:** Aplicación preventiva de flúor barniz en superficies dentarias para retardar y detener la caries dental. Población objeto: niños, niñas y jóvenes entre 1 y 17 años (mínimo 2 veces al año, cada 6 meses).")
@@ -423,9 +426,9 @@ with tab6:
             
             c_fl1, c_fl2 = st.columns(2)
             with c_fl1:
-                fecha_proxima_fluor = st.date_input("Fecha programada para próxima aplicación (6 meses):", value=date.today())
+                fecha_proxima_fluor = st.date_input("Fecha programada para próxima aplicación (6 meses):", value=date.today(), key="input_proxfluor")
             with c_fl2:
-                reacciones_previas_fluor = st.text_input("Antecedentes de alergia/reacción a barniz:", value="")
+                reacciones_previas_fluor = st.text_input("Antecedentes de alergia/reacción a barniz:", value="", key="input_reacfluor")
             
             obs_consentimiento_adicional = st.text_area(
                 "Notas o recomendaciones específicas adicionadas:",
@@ -441,7 +444,7 @@ with tab6:
             - **Cuidados posteriores (Durante las primeras 4 horas):** Evitar alimentos duros o pegajosos, productos con alcohol, enjuagues o bebidas calientes. Preferiblemente realizar el cepillado dental hasta la mañana siguiente.
             """)
         
-        acepta_consentimiento = st.checkbox("El paciente y/o acudiente declara haber sido informado de los riesgos/cuidados y ACEPTA la aplicación de flúor barniz.")
+        acepta_consentimiento = st.checkbox("El paciente y/o acudiente declara haber sido informado de los riesgos/cuidados y ACEPTA la aplicación de flúor barniz.", key="chk_acp2")
 
     elif tipo_consentimiento == "Consentimiento Informado para Raspaje Supragingival":
         st.info("ℹ️ **Procedimiento:** Eliminación mecánica de depósitos calcificados de placa bacteriana (cálculos/sarro) mediante instrumentos manuales, sónicos o ultrasónicos (frecuencia sugerida: 1 a 2 veces por año).")
@@ -451,9 +454,9 @@ with tab6:
             
             col_ras1, col_ras2 = st.columns(2)
             with col_ras1:
-                instrumentos_usados = st.multiselect("Instrumental a emplear:", ["Instrumentos Manuales", "Instrumentos Sónicos", "Instrumentos Ultrasónicos"])
+                instrumentos_usados = st.multiselect("Instrumental a emplear:", ["Instrumentos Manuales", "Instrumentos Sónicos", "Instrumentos Ultrasónicos"], default=[], key="input_inst")
             with col_ras2:
-                zonas_raspaje = st.text_input("Sectores / Cuadrantes a tratar:", value="")
+                zonas_raspaje = st.text_input("Sectores / Cuadrantes a tratar:", value="", key="input_zonasrasp")
             
             obs_consentimiento_adicional = st.text_area(
                 "Observaciones o hallazgos adicionales antes del procedimiento:",
@@ -470,7 +473,7 @@ with tab6:
             *Autorizo de manera libre y voluntaria la realización del procedimiento de raspaje supragingival.*
             """)
         
-        acepta_consentimiento = st.checkbox("El paciente declara haber comprendido la información y AUTORIZA de manera libre y voluntaria el Raspaje Supragingival.")
+        acepta_consentimiento = st.checkbox("El paciente declara haber comprendido la información y AUTORIZA de manera libre y voluntaria el Raspaje Supragingival.", key="chk_acp3")
 
     st.write("---")
 
@@ -485,8 +488,8 @@ with tab6:
 
     with col_f2:
         st.markdown("**Firma del Higienista / Estudiante / Odontólogo**")
-        nombre_odonto = st.text_input("Nombre del Profesional / Estudiante", value="")
-        tarjeta_prof = st.text_input("Registro / Código Profesional", value="")
+        nombre_odonto = st.text_input("Nombre del Profesional / Estudiante", value="", key="input_nomodo")
+        tarjeta_prof = st.text_input("Registro / Código Profesional", value="", key="input_regprof")
         file_firma_odonto = st.file_uploader("Adjuntar firma del profesional (PNG, JPG, PDF)", type=["png", "jpg", "jpeg", "pdf"], key="file_odo")
         if file_firma_odonto and file_firma_odonto.type != "application/pdf":
             st.image(file_firma_odonto, width=160)
@@ -500,21 +503,21 @@ with tab6:
                 "Fecha de Atención": fecha_hc.strftime("%Y-%m-%d"),
                 "Historia Clínica N°": hc_num,
                 "EPS": eps,
-                "Tipo Plan": tipo_plan,
-                "Condición Usuario": condicion_usuario,
+                "Tipo Plan": tipo_plan if tipo_plan != "Seleccione..." else "NO ESPECIFICADO",
+                "Condición Usuario": condicion_usuario if condicion_usuario != "Seleccione..." else "NO ESPECIFICADO",
                 "Paciente": nombre_paciente,
-                "Tipo Doc": tipo_doc,
+                "Tipo Doc": tipo_doc if tipo_doc != "Seleccione..." else "CC",
                 "Documento Paciente": num_doc,
-                "Sexo": sexo,
+                "Sexo": sexo if sexo else "NO ESPECIFICADO",
                 "Edad": edad,
-                "Estado Civil": estado_civil,
+                "Estado Civil": estado_civil if estado_civil != "Seleccione..." else "NO ESPECIFICADO",
                 "Ocupación": ocupacion,
                 "Fecha Nacimiento": fecha_nac.strftime("%Y-%m-%d"),
                 "Teléfono": telefono,
                 "Dirección": direccion,
                 "Ciudad/Departamento": ciudad_depto,
-                "Acompañante": f"{nombre_acomp} (Tel: {tel_acomp})",
-                "Responsable": f"{nombre_resp} (Tel: {tel_resp})",
+                "Acompañante": f"{nombre_acomp} (Tel: {tel_acomp})" if nombre_acomp else "Ninguno",
+                "Responsable": f"{nombre_resp} (Tel: {tel_resp})" if nombre_resp else "Ninguno",
                 "Motivo de Consulta": motivo,
                 "Enfermedad Actual": enfermedad_actual,
                 "Antecedentes": antecedentes_dict,
@@ -527,7 +530,7 @@ with tab6:
                 "Hallazgos Gen": f"Ortodoncia: {'SI' if hallaz_ortodoncia else 'NO'}, Prótesis: {'SI' if hallaz_protesis else 'NO'}",
                 "Obs Examen Fisico": obs_examen_fisico,
                 "Alimenticios": f"Carbohidratos: {ingesta_carbohidratos} | Comidas/día: {num_comidas}",
-                "Dentadura": tipo_dentadura,
+                "Dentadura": tipo_dentadura if tipo_dentadura else "No especificada",
                 "Radiografias": f"Periapical: {rx_periapical}, Oclusal: {rx_oclusal}, Panorámica: {rx_panoramica}, Otra: {rx_otra} | Tomadas: {placas_tomadas}, Dañadas: {placas_danadas}",
                 "Indices": f"Placa Bacteriana: {pct_placa_bacteriana}% | Pronóstico: {pronostico_gral}",
                 "Diags": f"Presuntivo: {diag_presuntivo} | Principal: {diag_principal} ({cod_principal}) | Secundario: {diag_secundario} ({cod_secundario})",
