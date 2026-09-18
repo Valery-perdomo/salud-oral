@@ -56,22 +56,18 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Subheader de estado y Botón para limpiar formulario de golpe
-col_head1, col_head2 = st.columns([4, 1])
-with col_head1:
+# Barra de control superior con el botón de limpieza visible y directo
+c_info, c_btn = st.columns([4, 1])
+with c_info:
     st.markdown("""
-        <div class="subheader-info" style="border: none; padding: 5px 0;">
-            <span style="color: #0f766e; font-size: 13px; font-weight: 600;">
-                <b>Consulta nueva</b> / Completa los módulos en orden para construir el expediente.
-            </span>
-            <span style="color: #475569; font-size: 12px; font-weight: 600;">
-                Estado: <b style="color: #059669;">En diligenciamiento</b>
-            </span>
+        <div style="padding: 10px 0; color: #0f766e; font-size: 13px; font-weight: 600;">
+            <b>Consulta nueva</b> / Completa los módulos en orden para construir el expediente. &nbsp;&nbsp;|&nbsp;&nbsp; 
+            <span style="color: #475569;">Estado: <b style="color: #059669;">En diligenciamiento</b></span>
         </div>
     """, unsafe_allow_html=True)
 
-with col_head2:
-    if st.button("🔄 Nueva Consulta / Limpiar"):
+with c_btn:
+    if st.button("🔄 Limpiar / Nuevo", use_container_width=True):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
