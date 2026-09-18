@@ -1,9 +1,11 @@
-/* Importar tipografía moderna y profesional */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-/* Forzar el fondo azul clarito sutil en todo Streamlit */
+/* Eliminar el espacio en blanco gigante superior de Streamlit */
 .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
     background-color: #f0f8ff !important;
+}
+
+/* Reducir el margen superior de toda la vista de Streamlit para subirlo */
+[data-testid="stMainBlockContainer"] {
+    padding-top: 1rem !important;
 }
 
 html, body, [class*="css"] {
@@ -11,41 +13,41 @@ html, body, [class*="css"] {
     color: #1e293b !important;
 }
 
-/* Header Banner Institucional */
+/* Header Banner Institucional más grandecito y llamativo */
 .header-banner {
     background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
-    padding: 1.25rem 1.75rem;
-    border-radius: 12px;
+    padding: 1.75rem 2.25rem; /* Más alto y espacioso */
+    border-radius: 14px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    margin-bottom: 1rem;
+    box-shadow: 0 6px 18px rgba(15, 118, 110, 0.15);
+    margin-bottom: 1.25rem;
     color: #ffffff !important;
 }
 
 .header-title {
     color: #ffffff !important;
-    font-size: 1.5rem !important;
-    font-weight: 700 !important;
+    font-size: 1.85rem !important; /* Título más grande */
+    font-weight: 800 !important;
     margin: 0 !important;
     letter-spacing: -0.02em;
 }
 
 .header-subtitle {
     color: #ccfbf1 !important;
-    font-size: 0.875rem !important;
-    margin: 0.25rem 0 0 0 !important;
-    font-weight: 400;
+    font-size: 1rem !important; /* Subtítulo más legible */
+    margin: 0.35rem 0 0 0 !important;
+    font-weight: 500;
 }
 
 .badge-session {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.25);
     color: #ffffff !important;
-    padding: 0.25rem 0.75rem;
+    padding: 0.35rem 0.85rem;
     border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.8rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -55,7 +57,7 @@ html, body, [class*="css"] {
     background-color: #ffffff;
     border: 1px solid #e2e8f0;
     border-left: 4px solid #0f766e;
-    padding: 0.75rem 1.25rem;
+    padding: 0.85rem 1.25rem;
     border-radius: 8px;
     display: flex;
     justify-content: space-between;
@@ -66,7 +68,7 @@ html, body, [class*="css"] {
 /* Tarjetas de Módulos */
 .stCardModule {
     background-color: #ffffff;
-    border: 1px solid #bae6fd; /* Borde azul claro */
+    border: 1px solid #bae6fd;
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;

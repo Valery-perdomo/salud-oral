@@ -37,7 +37,7 @@ def get_image_base64(path):
     return ""
 
 logo_b64 = get_image_base64("logo.png")
-logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 55px; margin-right: 15px;">' if logo_b64 else '🦷 '
+logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 70px; margin-right: 20px;">' if logo_b64 else '🦷 '
 
 # HEADER INSTITUCIONAL
 st.markdown(f"""
