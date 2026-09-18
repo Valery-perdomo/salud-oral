@@ -3,7 +3,7 @@
 
 html, body, [class*="css"] {
     font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-    background-color: #a1dbfb !important; /* Fondo general azul clarito sutil */
+    background-color: #00a6ff !important; /* Fondo general azul clarito sutil */
     color: #1e293b !important;
 }
 
