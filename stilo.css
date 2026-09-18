@@ -3,7 +3,7 @@
 
 html, body, [class*="css"] {
     font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-    background-color: #f8fafc !important;
+    background-color: #f0f8ff !important; /* Fondo general azul clarito sutil */
     color: #1e293b !important;
 }
 
@@ -59,14 +59,14 @@ html, body, [class*="css"] {
     margin-bottom: 1.5rem;
 }
 
-/* Tarjetas de Módulos */
+/* Tarjetas de Módulos con sutil reflejo azulado */
 .stCardModule {
     background-color: #ffffff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #dbeafe; /* Borde azul muy sutil */
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.04);
 }
 
 .badge-modulo {
@@ -137,7 +137,7 @@ div[role="radiogroup"] label p {
 /* Ajustes de Pestañas (Tabs) */
 .stTabs [data-baseweb="tab-list"] {
     gap: 8px;
-    background-color: #f1f5f9;
+    background-color: #e2e8f0;
     padding: 6px;
     border-radius: 10px;
 }
@@ -156,6 +156,7 @@ div[role="radiogroup"] label p {
     color: #0f766e !important;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+
 /* --- Ajuste responsivo para celulares --- */
 @media (max-width: 768px) {
     /* Evita que los títulos se rompan letra por letra en móviles */
