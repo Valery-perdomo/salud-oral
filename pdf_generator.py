@@ -8,7 +8,7 @@ from reportlab.platypus import (
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
-def procesar_imagen_firma(file_obj, width=130, height=40):
+def procesar_imagen_firma(file_obj, width=120, height=35):
     if file_obj is None:
         return ""
     try:
@@ -24,7 +24,6 @@ def procesar_imagen_firma(file_obj, width=130, height=40):
     return ""
 
 def esc(valor):
-    """Función de apoyo para escapar texto de forma segura para ReportLab."""
     if valor is None:
         return ""
     return html.escape(str(valor))
@@ -39,9 +38,9 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
         leftMargin=36,
         topMargin=30,
         bottomMargin=30,
-        title="Historia Clínica - Escuela de Salud San Pedro Claver",  # Título para la pestaña del navegador
-        author="Sistema de Salud Oral",                                 # Autor del documento
-        subject="Expediente Clínico Odontológico"                      # Asunto
+        title="Historia Clínica - Escuela de Salud San Pedro Claver",
+        author="Sistema de Salud Oral",
+        subject="Expediente Clínico Odontológico"
     )
 
     styles = getSampleStyleSheet()
@@ -62,13 +61,12 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
         'SecTitle', parent=styles['Heading2'], fontSize=9, leading=11, textColor=colors.white, backColor=PRIMARY_COLOR, borderPadding=(3, 4, 3, 4), spaceBefore=6, spaceAfter=4, fontName='Helvetica-Bold'
     )
     body_style = ParagraphStyle('BodyDark', parent=styles['Normal'], fontSize=8, leading=10.5, textColor=NEUTRAL_DARK)
-    body_bold = ParagraphStyle('BodyDarkBold', parent=body_style, fontName='Helvetica-Bold')
-
+    
     cons_title_style = ParagraphStyle(
-        'ConsTitle', parent=styles['Heading1'], fontSize=10.5, leading=12, textColor=colors.black, fontName='Helvetica-Bold', alignment=0
+        'ConsTitle', parent=styles['Heading1'], fontSize=10, leading=12, textColor=colors.black, fontName='Helvetica-Bold', alignment=0
     )
     cons_body_style = ParagraphStyle(
-        'ConsBody', parent=styles['Normal'], fontSize=8, leading=10.5, textColor=colors.black, fontName='Helvetica'
+        'ConsBody', parent=styles['Normal'], fontSize=7.5, leading=9.5, textColor=colors.black, fontName='Helvetica'
     )
 
     story = []
@@ -132,7 +130,7 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
         t_odonto.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,0), SECONDARY_COLOR), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('GRID', (0,0), (-1,-1), 0.5, BORDER_COLOR), ('TOPPADDING', (0,0), (-1,-1), 1.5), ('BOTTOMPADDING', (0,0), (-1,-1), 1.5)]))
         story.append(t_odonto)
 
-    # EVOLUCIÓN (Protegida con esc())
+    # EVOLUCIÓN
     story.append(Paragraph("4. REGISTRO DE EVOLUCIÓN CLÍNICA", section_title_style))
     if evoluciones:
         evo_data = [["Fecha", "Diente/Sitio", "Tratamiento Ejecutado"]]
@@ -148,7 +146,7 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
     else:
         story.append(Paragraph("Sin novedades registradas en esta consulta.", body_style))
 
-    # FIRMAS OBLIGATORIAS
+    # FIRMAS OBLIGATORIAS HISTORIA
     story.append(Spacer(1, 15))
     story.append(Paragraph("5. CONSTANCIA Y FIRMAS DE CONFORMIDAD", section_title_style))
     story.append(Spacer(1, 10))
@@ -166,35 +164,36 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
     story.append(t_firmas_hc)
 
     # =========================================================================
-    # 2. ANEXO DE CONSENTIMIENTO
+    # 2. ANEXOS DE CONSENTIMIENTOS INFORMADOS (TEXTOS EXACTOS DE TUS PDF)
     # =========================================================================
-    tipo_cons = datos_hc.get("Consentimiento Tipo", "Ninguno / No aplica para esta consulta")
+    consentimientos_str = datos_hc.get("Consentimientos Seleccionados", "Ninguno")
+    lista_activos = [c.strip() for c in consentimientos_str.split(",") if c.strip() and c.strip() != "Ninguno"]
 
-    if tipo_cons and "Ninguno" not in tipo_cons:
+    img_logo = ""
+    if os.path.exists("logo.png"):
+        try:
+            img_logo = Image("logo.png", width=110, height=45)
+        except Exception:
+            img_logo = Paragraph("<b>ESCUELA SAN PEDRO CLAVER</b>", body_style)
+
+    for tipo_cons in lista_activos:
         story.append(PageBreak())
-        
-        img_logo = ""
-        if os.path.exists("logo.png"):
-            try:
-                img_logo = Image("logo.png", width=110, height=45)
-            except Exception:
-                img_logo = Paragraph("<b>ESCUELA SAN PEDRO CLAVER</b>", body_bold)
+        cons_lower = tipo_cons.lower()
 
-        if "Raspaje" in tipo_cons:
+        # A. RASPAJE SUPRAGINGIVAL
+        if "raspaje" in cons_lower:
             head_cons = [[Paragraph("<b>CONSENTIMIENTO INFORMADO PARA RASPAJE SUPRAGINGIVAL</b>", cons_title_style), img_logo]]
             t_head_c = Table(head_cons, colWidths=[410, 130])
             t_head_c.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('ALIGN', (1,0), (1,0), 'RIGHT')]))
             story.append(t_head_c)
             story.append(Spacer(1, 4))
 
-            texto_exacto = """
+            texto_raspaje = f"""
             <b>Apreciado(a) paciente:</b><br/>
             Antes de realizar cualquier procedimiento, es importante que conozca en qué consiste, cuáles son sus beneficios, riesgos y alternativas. Lea atentamente la siguiente información.<br/>
             Si tiene dudas, consulte con su profesional tratante antes de firmar este consentimiento.<br/><br/>
             <b>1. DESCRIPCIÓN DEL PROCEDIMIENTO</b><br/>
-            El raspaje supragingival o raspado dental es un procedimiento mediante el cual se eliminan de forma mecánica los depósitos calcificados de placa bacteriana, conocidos como cálculos dentales o sarro, que se acumulan en la superficie de los dientes y alrededor del cuello de los mismos.<br/>
-            Para su realización se emplean instrumentos manuales, sónicos o ultrasónicos.<br/>
-            Este procedimiento suele realizarse con una frecuencia aproximada de <b>1 a 2 veces por año</b>, según la necesidad de cada paciente.<br/><br/>
+            El raspaje supragingival o raspado dental es un procedimiento mediante el cual se eliminan de forma mecánica los depósitos calcificados de placa bacteriana, conocidos como cálculos dentales o sarro, que se acumulan en la superficie de los dientes y alrededor del cuello de los mismos. Para su realización se emplean instrumentos manuales, sónicos o ultrasónicos. Este procedimiento suele realizarse con una frecuencia aproximada de 1 a 2 veces por año, según la necesidad de cada paciente.<br/><br/>
             <b>2. OBJETIVOS DEL PROCEDIMIENTO</b><br/>
             • Prevenir enfermedades de las encías y tejidos de soporte dental.<br/>
             • Mantener una adecuada salud bucal.<br/>
@@ -203,7 +202,7 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
             • Eliminación de la placa bacteriana y el cálculo dental.<br/>
             • Disminución del mal aliento (halitosis).<br/>
             • Prevención de la gingivitis y periodontitis.<br/>
-            • Sensación de limpieza y frescura en la boca<br/><br/>
+            • Sensación de limpieza y frescura en la boca.<br/><br/>
             <b>4. RIESGOS DEL PROCEDIMIENTO</b><br/>
             Aunque es un procedimiento seguro, puede presentarse:<br/>
             • Sensibilidad dental temporal al frío o calor.<br/>
@@ -211,47 +210,46 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
             • Molestias leves o irritación gingival pasajera.<br/>
             • En casos excepcionales, daño menor a los tejidos blandos.<br/><br/>
             <b>5. RIESGOS DE NO REALIZAR EL PROCEDIMIENTO</b><br/>
-            La falta de raspaje puede causar acumulación de placa y calculo, lo que incrementa el riesgo de gingivitis, periodontitis, movilidad y posible pérdida de los dientes con el tiempo.<br/><br/>
+            La falta de raspaje puede causar acumulación de placa y cálculo, lo que incrementa el riesgo de gingivitis, periodontitis, movilidad y posible pérdida de los dientes con el tiempo.<br/><br/>
             <b>6. INFORMACIÓN ADICIONAL</b><br/>
-            Usted puede realizar preguntas y aclarar cualquier duda antes, durante o después del procedimiento.<br/>
-            Tiene derecho a retirar su consentimiento en cualquier momento, sin que esto afecte la atención futura que pueda recibir.<br/><br/>
+            Usted puede realizar preguntas y aclarar cualquier duda antes, durante o después del procedimiento. Tiene derecho a retirar su consentimiento en cualquier momento, sin que esto afecte la atención futura que pueda recibir.<br/><br/>
             <b>He leído y comprendido la información anterior.</b><br/>
             <b>Autorizo de manera libre y voluntaria la realización del procedimiento de raspaje supragingival.</b>
+            {f"<br/><br/><b>Observaciones:</b> {esc(datos_hc.get('Obs Raspaje', ''))}" if datos_hc.get('Obs Raspaje') else ""}
             """
-            story.append(Paragraph(texto_exacto, cons_body_style))
-            story.append(Spacer(1, 6))
+            story.append(Paragraph(texto_raspaje, cons_body_style))
+            story.append(Spacer(1, 10))
 
-            datos_pie = [
+            datos_pie_r = [
                 [Paragraph(f"<b>Nombre del paciente:</b> {esc(datos_hc.get('Paciente', ''))}", cons_body_style), img_pac if img_pac != "" else Paragraph("", body_style)],
                 [Paragraph(f"<b>Documento de identidad:</b> {esc(datos_hc.get('Tipo Doc', ''))} {esc(datos_hc.get('Documento Paciente', ''))}", cons_body_style), Paragraph("___________________________________", cons_body_style)],
-                [Paragraph(f"<b>Firma del paciente:</b>", cons_body_style), Paragraph("", cons_body_style)],
+                [Paragraph(f"<b>Firma del paciente:</b>", cons_body_style), Paragraph("", body_style)],
                 [Paragraph(f"<b>Fecha atención:</b> {esc(datos_hc.get('Fecha de Atención', ''))}", cons_body_style), img_odo if img_odo != "" else Paragraph("", body_style)],
                 [Paragraph(f"<b>Nombre del estudiante:</b> {esc(datos_hc.get('Odontólogo Tratante', ''))}", cons_body_style), Paragraph("___________________________________", cons_body_style)],
-                [Paragraph(f"<b>Firma del estudiante:</b>", cons_body_style), Paragraph("", cons_body_style)]
+                [Paragraph(f"<b>Firma del estudiante:</b>", cons_body_style), Paragraph("", body_style)]
             ]
-            t_pie = Table(datos_pie, colWidths=[320, 220])
-            t_pie.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'BOTTOM'), ('TOPPADDING', (0,0), (-1,-1), 1), ('BOTTOMPADDING', (0,0), (-1,-1), 1)]))
-            story.append(t_pie)
+            t_pie_r = Table(datos_pie_r, colWidths=[320, 220])
+            t_pie_r.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'BOTTOM'), ('TOPPADDING', (0,0), (-1,-1), 1), ('BOTTOMPADDING', (0,0), (-1,-1), 1)]))
+            story.append(t_pie_r)
 
-        elif "Higiene Oral" in tipo_cons:
+        # B. HIGIENE ORAL
+        elif "higiene" in cons_lower:
             head_cons = [[Paragraph("<b>CONSENTIMIENTO INFORMADO PARA HIGIENE ORAL</b>", cons_title_style), img_logo]]
             t_head_c = Table(head_cons, colWidths=[410, 130])
             t_head_c.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('ALIGN', (1,0), (1,0), 'RIGHT')]))
             story.append(t_head_c)
-            story.append(Spacer(1, 6))
+            story.append(Spacer(1, 4))
 
             info_top = [
-                [Paragraph(f"<b>Nombre y Apellido del Paciente:</b> {esc(datos_hc.get('Paciente', ''))}", cons_body_style)],
-                [Paragraph(f"<b>Documento identidad:</b> {esc(datos_hc.get('Tipo Doc', ''))} {esc(datos_hc.get('Documento Paciente', ''))}", cons_body_style)],
-                [Paragraph(f"<b>Edad:</b> {esc(datos_hc.get('Edad', ''))} años", cons_body_style)],
-                [Paragraph(f"<b>Fecha atención:</b> {esc(datos_hc.get('Fecha de Atención', ''))}", cons_body_style)]
+                [Paragraph(f"<b>Nombre y Apellido del Paciente:</b> {esc(datos_hc.get('Paciente', ''))}", cons_body_style), Paragraph(f"<b>Edad:</b> {esc(datos_hc.get('Edad', ''))} años", cons_body_style)],
+                [Paragraph(f"<b>Documento identidad:</b> {esc(datos_hc.get('Tipo Doc', ''))} {esc(datos_hc.get('Documento Paciente', ''))}", cons_body_style), Paragraph(f"<b>Fecha atención:</b> {esc(datos_hc.get('Fecha de Atención', ''))}", cons_body_style)]
             ]
-            t_top = Table(info_top, colWidths=[540])
+            t_top = Table(info_top, colWidths=[360, 180])
             t_top.setStyle(TableStyle([('TOPPADDING', (0,0), (-1,-1), 1), ('BOTTOMPADDING', (0,0), (-1,-1), 1)]))
             story.append(t_top)
-            story.append(Spacer(1, 8))
+            story.append(Spacer(1, 6))
 
-            texto_ho = """
+            texto_ho = f"""
             Por medio del presente documento, se autoriza al higienista oral de la <b>Escuela de Salud San Pedro Claver</b> para realizar el procedimiento de higiene oral.<br/><br/>
             El paciente ha sido informado de que este procedimiento consiste en la eliminación de placa bacteriana, manchas y cálculos superficiales mediante el uso de instrumentos manuales y/o mecánicos, con el fin de mejorar la salud bucal y prevenir enfermedades orales como la gingivitis y la periodontitis.<br/><br/>
             También se ha informado sobre los posibles efectos secundarios o molestias que pueden presentarse durante o después del procedimiento, tales como:<br/>
@@ -261,9 +259,10 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
             • Molestias al masticar o al cepillarse durante las primeras horas posteriores a la atención.<br/><br/>
             De igual forma, se ha explicado que, en algunos casos, puede ser necesario remitir al paciente a un odontólogo para valoración o toma de radiografías si se evidencian alteraciones que lo requieran.<br/><br/>
             <b>El paciente declara haber recibido la información completa sobre el procedimiento, sus beneficios, riesgos y cuidados posteriores, y manifiesta estar de acuerdo con su realización.</b>
+            {f"<br/><br/><b>Observaciones:</b> {esc(datos_hc.get('Obs Higiene Oral', ''))}" if datos_hc.get('Obs Higiene Oral') else ""}
             """
             story.append(Paragraph(texto_ho, cons_body_style))
-            story.append(Spacer(1, 25))
+            story.append(Spacer(1, 20))
 
             firmas_ho = [
                 [img_pac if img_pac != "" else Paragraph("", body_style), img_odo if img_odo != "" else Paragraph("", body_style)],
@@ -277,12 +276,13 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
             t_f_ho.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER'), ('VALIGN', (0,0), (-1,-1), 'BOTTOM')]))
             story.append(t_f_ho)
 
+        # C. APLICACIÓN DE FLÚOR
         else:
             head_cons = [[Paragraph("<b>CONSENTIMIENTO INFORMADO PARA APLICACIÓN DE FLUOR</b>", cons_title_style), img_logo]]
             t_head_c = Table(head_cons, colWidths=[410, 130])
             t_head_c.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('ALIGN', (1,0), (1,0), 'RIGHT')]))
             story.append(t_head_c)
-            story.append(Spacer(1, 6))
+            story.append(Spacer(1, 4))
 
             info_top = [
                 [Paragraph(f"<b>Nombre y apellido del paciente:</b> {esc(datos_hc.get('Paciente', ''))}", cons_body_style), Paragraph(f"<b>Edad:</b> {esc(datos_hc.get('Edad', ''))} años", cons_body_style)],
@@ -296,16 +296,17 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
             texto_fl = f"""
             <b>Apreciado(a) paciente:</b><br/>
             Antes de realizar cualquier procedimiento, es importante que conozca en qué consiste, cuáles son sus beneficios, riesgos y alternativas. Lea atentamente la siguiente información.<br/>
-            Si tiene dudas, consulte con su profesional tratante antes de firmar este consentimiento<br/><br/>
+            Si tiene dudas, consulte con su profesional tratante antes de firmar este consentimiento.<br/><br/>
             Se entiende por <b>APLICACIÓN DE FLUOR BARNIZ</b> el procedimiento preventivo para caries dental y terapéutica para la detección temprana, mediante la aplicación del flúor barniz en las superficies dentarias. Actividad que busca retardar y detener el proceso de caries dental, al poner en contacto la parte coronal o radicular del diente con un vehículo que contiene altas concentraciones de flúor, pero que por su secado rápido al entrar en contacto con la saliva permite la formación de una película que libera de forma lenta y continua iones de fluoruro hacia la superficie del diente subyacente cubriendo el esmalte dental, para reducir su desmineralización y disolución por la acción de microorganismos y la producción de ácidos que se acumulan durante la formación de biofilm y de la placa dental.<br/><br/>
             Los niños, niñas y jóvenes entre 1 y 17 años, son la población objeto para la aplicación del flúor barniz, incluida en el Plan de beneficios en salud, con una frecuencia de aplicación mínima de dos veces por año, teniendo en cuenta la valoración del riesgo individual y que entre aplicación y aplicación debe existir un periodo de 6 meses, dada la liberación prolongada de flúor.<br/><br/>
             Certifico que el odontólogo o higienista, éste último bajo la supervisión del odontólogo, me ha explicado el procedimiento a realizar y los cuidados que debo tener posteriormente.<br/>
             Igualmente certifico que me han explicado la importancia de continuar con su aplicación según la valoración de riesgo registrada, para asistir a la próxima aplicación y cumplir con lo acordado durante el año, solicitado por el odontólogo o higienista oral, personal autorizado(s) y capacitado(s) para dichas aplicaciones.<br/><br/>
             He tenido la oportunidad de hacer las preguntas que he considerado necesarias y todas han sido contestadas satisfactoriamente; así como se me ha explicado que, debido al color del barniz, puede presentarse un leve cambio temporal en el color del diente, que el periodo de tratamiento es de 4 horas (debo evitar los alimentos duros o pegajosos, productos con alcohol, enjuagues, bebidas calientes o lavarme los dientes por estas 4 horas) siguientes a la aplicación del barniz y preferiblemente realizar el cepillado dental hasta la mañana siguiente.<br/><br/>
             <b>Fecha de próxima aplicación:</b> {esc(datos_hc.get('Proxima Cita Fluor', 'N/A'))}
+            {f"<br/><b>Observaciones:</b> {esc(datos_hc.get('Obs Fluor', ''))}" if datos_hc.get('Obs Fluor') else ""}
             """
             story.append(Paragraph(texto_fl, cons_body_style))
-            story.append(Spacer(1, 20))
+            story.append(Spacer(1, 15))
 
             firmas_fl = [
                 [img_pac if img_pac != "" else Paragraph("", body_style), img_odo if img_odo != "" else Paragraph("", body_style)],

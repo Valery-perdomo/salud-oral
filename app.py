@@ -387,34 +387,24 @@ with tab6:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 6</span><b style="color: #0f172a; font-size: 15px;">Consentimientos Informados y Firmas Digitales</b></div><br>', unsafe_allow_html=True)
     
-    st.markdown('<span class="subseccion-titulo">📋 DILIGENCIAMIENTO DE CONSENTIMIENTO INFORMADO</span><br><br>', unsafe_allow_html=True)
+    st.markdown('<span class="subseccion-titulo">📋 SELECCIÓN DE CONSENTIMIENTOS INFORMADOS (PUEDE MARCAR VARIOS O NINGUNO)</span><br><br>', unsafe_allow_html=True)
     
-    tipo_consentimiento = st.selectbox(
-        "Seleccione el Consentimiento Informado a anexar a la Historia Clínica:",
-        [
-            "Ninguno / No aplica para esta consulta",
-            "Consentimiento Informado para Higiene Oral",
-            "Consentimiento Informado para Aplicación de Flúor Barniz",
-            "Consentimiento Informado para Raspaje Supragingival"
-        ],
-        index=0,
-        key="input_tipocons"
-    )
+    cons_higiene = st.checkbox("Consentimiento Informado para Higiene Oral", key="cons_hig")
+    cons_fluor = st.checkbox("Consentimiento Informado para Aplicación de Flúor Barniz", key="cons_flu")
+    cons_raspaje = st.checkbox("Consentimiento Informado para Raspaje Supragingival", key="cons_ras")
 
-    acepta_consentimiento = False
-    fecha_proxima_fluor = None
-    obs_consentimiento_adicional = ""
-    reacciones_previas_fluor = ""
-    instrumentos_usados = []
-    zonas_raspaje = ""
+    consentimientos_seleccionados = []
 
-    if tipo_consentimiento == "Consentimiento Informado para Higiene Oral":
+    # 1. HIGIENE ORAL
+    if cons_higiene:
+        consentimientos_seleccionados.append("Higiene Oral")
+        st.markdown("---")
         st.info("ℹ️ **Procedimiento:** Eliminación de placa bacteriana, manchas y cálculos superficiales mediante el uso de instrumentos manuales y/o mecánicos con el fin de mejorar la salud bucal y prevenir enfermedades como gingivitis y periodontitis.")
         
         with st.expander("📄 Ver y Editar Datos del Consentimiento (Higiene Oral)", expanded=True):
             st.markdown(f"**Nombre y Apellido:** {nombre_paciente if nombre_paciente else '_______________'} &nbsp;&nbsp;|&nbsp;&nbsp; **Documento:** {num_doc if num_doc else '_______________'} &nbsp;&nbsp;|&nbsp;&nbsp; **Edad:** {edad} años  \n**Fecha de Atención:** {fecha_hc.strftime('%Y-%m-%d')}")
             
-            obs_consentimiento_adicional = st.text_area(
+            obs_ho = st.text_area(
                 "Observaciones particulares / Comentarios adicionales del procedimiento:",
                 value="",
                 placeholder="Ej: Paciente presenta ligera sensibilidad previa en cuadrante 2...",
@@ -431,9 +421,12 @@ with tab6:
             *El paciente declara haber recibido la información completa sobre el procedimiento, sus beneficios, riesgos y cuidados posteriores, y manifiesta estar de acuerdo con su realización.*
             """)
         
-        acepta_consentimiento = st.checkbox("El paciente y/o acudiente declara haber leído, comprendido y ACEPTA la realización de la Higiene Oral.", key="chk_acp1")
+        acepta_ho = st.checkbox("El paciente y/o acudiente declara haber leído, comprendido y ACEPTA la realización de la Higiene Oral.", key="chk_acepta_ho")
 
-    elif tipo_consentimiento == "Consentimiento Informado para Aplicación de Flúor Barniz":
+    # 2. FLÚOR BARNIZ
+    if cons_fluor:
+        consentimientos_seleccionados.append("Aplicación de Flúor Barniz")
+        st.markdown("---")
         st.info("ℹ️ **Procedimiento:** Aplicación preventiva de flúor barniz en superficies dentarias para retardar y detener la caries dental. Población objeto: niños, niñas y jóvenes entre 1 y 17 años (mínimo 2 veces al año, cada 6 meses).")
         
         with st.expander("📄 Ver y Editar Datos del Consentimiento (Aplicación de Flúor)", expanded=True):
@@ -445,7 +438,7 @@ with tab6:
             with c_fl2:
                 reacciones_previas_fluor = st.text_input("Antecedentes de alergia/reacción a barniz:", value="", key="input_reacfluor")
             
-            obs_consentimiento_adicional = st.text_area(
+            obs_fl = st.text_area(
                 "Notas o recomendaciones específicas adicionadas:",
                 value="",
                 placeholder="Ej: Aplicación focalizada en molares superiores...",
@@ -459,9 +452,12 @@ with tab6:
             - **Cuidados posteriores (Durante las primeras 4 horas):** Evitar alimentos duros o pegajosos, productos con alcohol, enjuagues o bebidas calientes. Preferiblemente realizar el cepillado dental hasta la mañana siguiente.
             """)
         
-        acepta_consentimiento = st.checkbox("El paciente y/o acudiente declara haber sido informado de los riesgos/cuidados y ACEPTA la aplicación de flúor barniz.", key="chk_acp2")
+        acepta_fl = st.checkbox("El paciente y/o acudiente declara haber sido informado de los riesgos/cuidados y ACEPTA la aplicación de flúor barniz.", key="chk_acepta_fl")
 
-    elif tipo_consentimiento == "Consentimiento Informado para Raspaje Supragingival":
+    # 3. RASPAJE SUPRAGINGIVAL
+    if cons_raspaje:
+        consentimientos_seleccionados.append("Raspaje Supragingival")
+        st.markdown("---")
         st.info("ℹ️ **Procedimiento:** Eliminación mecánica de depósitos calcificados de placa bacteriana (cálculos/sarro) mediante instrumentos manuales, sónicos o ultrasónicos (frecuencia sugerida: 1 a 2 veces por año).")
         
         with st.expander("📄 Ver y Editar Datos del Consentimiento (Raspaje Supragingival)", expanded=True):
@@ -469,11 +465,11 @@ with tab6:
             
             col_ras1, col_ras2 = st.columns(2)
             with col_ras1:
-                instrumentos_usados = st.multiselect("Instrumental a emplear:", ["Instrumentos Manuales", "Instrumentos Sónicos", "Instrumentos Ultrasónicos"], default=[], key="input_inst")
+                instrumentos_usados = st.multiselect("Instrumental a emplear:", ["Instrumentos Manuales", "Instrumentos Sónicos", "Instrumentos Ultrasónicos"], default=["Instrumentos Manuales", "Instrumentos Ultrasónicos"], key="input_inst")
             with col_ras2:
                 zonas_raspaje = st.text_input("Sectores / Cuadrantes a tratar:", value="", key="input_zonasrasp")
             
-            obs_consentimiento_adicional = st.text_area(
+            obs_rs = st.text_area(
                 "Observaciones o hallazgos adicionales antes del procedimiento:",
                 value="",
                 placeholder="Ej: Se evidencia sangrado gingival en sector anterior...",
@@ -488,7 +484,10 @@ with tab6:
             *Autorizo de manera libre y voluntaria la realización del procedimiento de raspaje supragingival.*
             """)
         
-        acepta_consentimiento = st.checkbox("El paciente declara haber comprendido la información y AUTORIZA de manera libre y voluntaria el Raspaje Supragingival.", key="chk_acp3")
+        acepta_rs = st.checkbox("El paciente declara haber comprendido la información y AUTORIZA de manera libre y voluntaria el Raspaje Supragingival.", key="chk_acepta_rs")
+
+    if not consentimientos_seleccionados:
+        st.info("💡 Ningún consentimiento seleccionado. Puede continuar con las firmas y la generación del PDF.")
 
     st.write("---")
 
@@ -514,6 +513,16 @@ with tab6:
     # BOTÓN GENERAL GENERAR PDF
     if st.button("🔒 GENERAR Y COMPILAR PDF COMPLETO", use_container_width=True):
         if nombre_paciente and nombre_odonto:
+            
+            # Recolectar en una lista fresca los consentimientos que están marcados en este instante
+            consentimientos_activos = []
+            if cons_higiene:
+                consentimientos_activos.append("Higiene Oral")
+            if cons_fluor:
+                consentimientos_activos.append("Aplicación de Flúor")
+            if cons_raspaje:
+                consentimientos_activos.append("Raspaje Supragingival")
+
             datos_hc = {
                 "Fecha de Atención": fecha_hc.strftime("%Y-%m-%d"),
                 "Historia Clínica N°": hc_num,
@@ -550,13 +559,13 @@ with tab6:
                 "Indices": f"Placa Bacteriana: {pct_placa_bacteriana}% | Pronóstico: {pronostico_gral}",
                 "Diags": f"Presuntivo: {diag_presuntivo} | Principal: {diag_principal} ({cod_principal}) | Secundario: {diag_secundario} ({cod_secundario})",
                 "Plan Resumen": f"Áreas: {', '.join(plan_areas)} | Citas: {citas_programar} | Detalle: {desc_plan_tratamiento}",
-                "Consentimiento Tipo": tipo_consentimiento,
-                "Consentimiento Aceptado": "SÍ" if acepta_consentimiento else "NO / NO APLICA",
-                "Proxima Cita Fluor": fecha_proxima_fluor.strftime("%Y-%m-%d") if fecha_proxima_fluor else "N/A",
-                "Obs Consentimiento Adicional": obs_consentimiento_adicional,
-                "Reacciones Previas Fluor": reacciones_previas_fluor,
-                "Instrumentos Raspaje": ", ".join(instrumentos_usados) if instrumentos_usados else "N/A",
-                "Zonas Raspaje": zonas_raspaje,
+                
+                # Pasamos la cadena unida con comas de forma garantizada
+                "Consentimientos Seleccionados": ", ".join(consentimientos_activos) if consentimientos_activos else "Ninguno",
+                "Obs Higiene Oral": obs_ho if cons_higiene else "",
+                "Obs Fluor": f"Fecha próxima: {fecha_proxima_fluor.strftime('%Y-%m-%d')} | Reacciones: {reacciones_previas_fluor} | Notas: {obs_fl}" if cons_fluor else "",
+                "Obs Raspaje": f"Instrumentos: {', '.join(instrumentos_usados)} | Zonas: {zonas_raspaje} | Notas: {obs_rs}" if cons_raspaje else "",
+                
                 "Odontólogo Tratante": nombre_odonto,
                 "Código/Registro": tarjeta_prof
             }
@@ -570,7 +579,7 @@ with tab6:
             )
 
             st.download_button(
-                label="📕 DESCARGAR PDF COMPLETO CON HISTORIA Y CONSENTIMIENTO",
+                label="📕 DESCARGAR PDF COMPLETO CON HISTORIA Y CONSENTIMIENTOS",
                 data=pdf_data,
                 file_name="Historia_Clinica_San_Pedro_Claver.pdf",
                 mime="application/pdf",
@@ -578,5 +587,3 @@ with tab6:
             )
         else:
             st.error("⚠️ Por favor ingresa el nombre del paciente (Módulo 1) y el del profesional (Módulo 6) antes de generar el reporte PDF.")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
