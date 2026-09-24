@@ -118,16 +118,28 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
 
     if plan_tratamiento:
         story.append(Spacer(1, 3))
-        table_odonto_data = [["Pieza (FDI)", "Hallazgo / Convención", "Superficie", "Observación"]]
+        table_odonto_data = [[
+            Paragraph("Pieza / ubicación", body_style),
+            Paragraph("Hallazgo / convención", body_style),
+            Paragraph("Superficie", body_style),
+            Paragraph("Observación", body_style)
+        ]]
         for item in plan_tratamiento:
             table_odonto_data.append([
-                esc(item.get("Diente", "")), 
-                esc(item.get("Hallazgo", "")), 
-                esc(item.get("Superficies", "N/A")), 
-                esc(item.get("Observación", ""))
+                Paragraph(esc(item.get("Diente", "")), body_style),
+                Paragraph(esc(item.get("Hallazgo", "")), body_style),
+                Paragraph(esc(item.get("Superficies", "N/A")), body_style),
+                Paragraph(esc(item.get("Observación", "")), body_style)
             ])
-        t_odonto = Table(table_odonto_data, colWidths=[70, 150, 110, 210])
-        t_odonto.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,0), SECONDARY_COLOR), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('GRID', (0,0), (-1,-1), 0.5, BORDER_COLOR), ('TOPPADDING', (0,0), (-1,-1), 1.5), ('BOTTOMPADDING', (0,0), (-1,-1), 1.5)]))
+        t_odonto = Table(table_odonto_data, colWidths=[85, 165, 105, 185], repeatRows=1)
+        t_odonto.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), SECONDARY_COLOR),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('GRID', (0,0), (-1,-1), 0.5, BORDER_COLOR),
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('TOPPADDING', (0,0), (-1,-1), 3),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 3)
+        ]))
         story.append(t_odonto)
 
     # EVOLUCIÓN
@@ -166,8 +178,11 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
     # =========================================================================
     # 2. ANEXOS DE CONSENTIMIENTOS INFORMADOS (TEXTOS EXACTOS DE TUS PDF)
     # =========================================================================
-    consentimientos_str = datos_hc.get("Consentimientos Seleccionados", "Ninguno")
-    lista_activos = [c.strip() for c in consentimientos_str.split(",") if c.strip() and c.strip() != "Ninguno"]
+    consentimientos_str = str(datos_hc.get("Consentimientos Seleccionados", "") or "").strip()
+    if not consentimientos_str or consentimientos_str.lower().startswith("ninguno"):
+        lista_activos = []
+    else:
+        lista_activos = [c.strip() for c in consentimientos_str.split(",") if c.strip()]
 
     img_logo = ""
     if os.path.exists("logo.png"):
