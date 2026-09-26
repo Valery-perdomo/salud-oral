@@ -13,7 +13,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# Ocultar el menú de hamburguesa y barra superior de Streamlit
 hide_streamlit_style = """
 <style>
 #MainMenu {visibility: hidden;}
@@ -23,7 +22,6 @@ header {visibility: hidden;}
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Cargar CSS
 def cargar_css(file_name):
     if os.path.exists(file_name):
         with open(file_name, "r", encoding="utf-8") as f:
@@ -41,7 +39,6 @@ def get_image_base64(path):
 logo_b64 = get_image_base64("logo.png")
 logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 70px; margin-right: 20px;">' if logo_b64 else '🦷 '
 
-# HEADER INSTITUCIONAL
 st.markdown(f"""
     <div class="header-banner">
         <div style="display: flex; align-items: center;">
@@ -58,7 +55,6 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Barra de estado limpia (sin el botón de borrado)
 st.markdown("""
     <div style="padding: 10px 0; color: #0f766e; font-size: 13px; font-weight: 600;">
         <b>Consulta nueva</b> / Completa los módulos en orden para construir el expediente. &nbsp;&nbsp;|&nbsp;&nbsp; 
@@ -66,7 +62,6 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Inicializar estados de sesión
 if "evoluciones" not in st.session_state:
     st.session_state.evoluciones = []
 
@@ -79,15 +74,12 @@ if "marcas_odontograma" not in st.session_state:
 if "convencion_odontograma" not in st.session_state:
     st.session_state.convencion_odontograma = "Caries"
 
-# Contador que renueva el lienzo del odontograma después de cada cambio
 if "odonto_version" not in st.session_state:
     st.session_state.odonto_version = 0
 
-# Último clic ya procesado (evita marcas duplicadas al pulsar botones)
 if "ultimo_click_odonto" not in st.session_state:
     st.session_state.ultimo_click_odonto = None
 
-# --- PESTAÑAS ---
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "1. Datos Administrativos", 
     "2. Anamnesis y Antecedentes", 
@@ -97,7 +89,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "6. Firmas y Consentimientos"
 ])
 
-# --- TAB 1: DATOS ADMINISTRATIVOS Y DE IDENTIFICACIÓN ---
+# --- TAB 1
 with tab1:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 0</span><b style="color: #0f172a; font-size: 15px;">Datos Administrativos de la Consulta</b></div><br>', unsafe_allow_html=True)
@@ -143,7 +135,6 @@ with tab1:
         direccion = st.text_input("Dirección de Vivienda", value="", placeholder="Dirección...", key="input_dir")
         telefono = st.text_input("Teléfono de Contacto", value="", placeholder="Teléfono...", key="input_tel")
         
-        # Selector de Ciudad / Departamento principal de Colombia
         lista_ciudades = [
             "Neiva / Huila",
             "Bogotá D.C.",
@@ -176,7 +167,7 @@ with tab1:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TAB 2: ANAMNESIS Y ANTECEDENTES MÉDICOS ---
+# --- TAB 2
 with tab2:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 2</span><b style="color: #0f172a; font-size: 15px;">Anamnesis y Antecedentes Médicos</b></div><br>', unsafe_allow_html=True)
@@ -222,7 +213,7 @@ with tab2:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TAB 3: EXAMEN FÍSICO ESTOMATOLÓGICO ---
+# --- TAB 3
 with tab3:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 3</span><b style="color: #0f172a; font-size: 15px;">Examen Físico Estomatológico</b></div><br>', unsafe_allow_html=True)
@@ -277,7 +268,7 @@ with tab3:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TAB 4: ODONTOGRAMA, RADIOGRAFÍAS Y DIAGNÓSTICOS ---
+# --- TAB 4
 with tab4:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 4</span><b style="color: #0f172a; font-size: 16px;">Odontograma y Registro FDI</b></div><br>', unsafe_allow_html=True)
@@ -329,15 +320,13 @@ with tab4:
             "gris": "Gris", "morado": "Morado"
         }
 
-        # ---------- PASO 1: HACER CLIC EN LA IMAGEN ----------
         st.markdown("**Haz clic sobre el diente o la superficie donde va la marca:**")
 
-        ANCHO_VISOR = 1200     # ancho fijo con el que se muestra la imagen
-        TAMANO_MARCAS = 0.40   # tamaño fijo de lo pintado
+        ANCHO_VISOR = 1200    
+        TAMANO_MARCAS = 0.40   
 
         imagen_base = Image.open(ruta_odontograma).convert("RGB")
         ancho_img, alto_img = imagen_base.size
-        # Factor para que las marcas se vean del mismo tamaño sin importar la resolución de la imagen
         factor = (ancho_img / ANCHO_VISOR) * TAMANO_MARCAS
 
         def r(valor):
@@ -352,7 +341,6 @@ with tab4:
         lienzo = ImageDraw.Draw(imagen_marcada)
 
         def dibujar_marca(lienzo, marca):
-            # Las marcas se guardan en píxeles de la imagen original
             x, y = marca["x"], marca["y"]
             color_nombre, figura = convenciones[marca["convencion"]]
             color = colores[color_nombre]
@@ -395,7 +383,6 @@ with tab4:
             dibujar_marca(lienzo, marca)
 
         clave_canvas = f"odontograma_canvas_{st.session_state.odonto_version}"
-        # Alinear el visor al centro de la pantalla para que la imagen quede centrada
         st.markdown(
             "<style>iframe[title='streamlit_image_coordinates.streamlit_image_coordinates']"
             "{display:block;margin:0 auto;max-width:100%;}</style>",
@@ -412,7 +399,6 @@ with tab4:
             st.markdown('</div>', unsafe_allow_html=True)
 
         if coordenada:
-            # Identificador único del clic: si ya se procesó (p. ej. al pulsar un botón), se ignora
             firma_click = (clave_canvas, coordenada["x"], coordenada["y"], coordenada.get("unix_time"))
             if st.session_state.ultimo_click_odonto != firma_click:
                 st.session_state.ultimo_click_odonto = firma_click
@@ -438,7 +424,6 @@ with tab4:
                 st.session_state.odonto_version += 1
                 st.rerun()
 
-        # ---------- PASO 2: BOTONES DE SIGNOS (DEBAJO DE LA IMAGEN) ----------
         color_activo, figura_activa = convenciones[st.session_state.convencion_odontograma]
         simbolo_activo = simbolos_convenciones[figura_activa]
         st.info(
@@ -461,7 +446,7 @@ with tab4:
         col_deshacer, col_borrar = st.columns(2)
         with col_deshacer:
             if st.button("↩️ Deshacer última marca", key="deshacer_marca_odontograma", use_container_width=True,
-                         disabled=not st.session_state.marcas_odontograma):
+                        disabled=not st.session_state.marcas_odontograma):
                 st.session_state.marcas_odontograma.pop()
                 if st.session_state.plan_tratamiento:
                     st.session_state.plan_tratamiento.pop()
@@ -521,7 +506,7 @@ with tab4:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TAB 5: EVOLUCIÓN ---
+# --- TAB 5
 with tab5:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 5</span><b style="color: #0f172a; font-size: 15px;">Evolución del Tratamiento</b></div><br>', unsafe_allow_html=True)
@@ -548,7 +533,7 @@ with tab5:
         st.dataframe(pd.DataFrame(st.session_state.evoluciones), use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TAB 6: FIRMAS Y CONSENTIMIENTOS INFORMADOS ---
+# --- TAB 6
 with tab6:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 6</span><b style="color: #0f172a; font-size: 15px;">Consentimientos Informados y Firmas Digitales</b></div><br>', unsafe_allow_html=True)
@@ -686,8 +671,6 @@ with tab6:
             st.image(file_firma_odonto, width=160)
 
     st.write("---")
-
-    # BOTÓN GENERAL GENERAR PDF
     if st.button("🔒 GENERAR Y COMPILAR PDF COMPLETO", use_container_width=True):
         if nombre_paciente and nombre_odonto:
             datos_hc = {

@@ -74,9 +74,6 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
     img_pac = procesar_imagen_firma(firma_paciente_file, width=120, height=35)
     img_odo = procesar_imagen_firma(firma_odonto_file, width=120, height=35)
 
-    # =========================================================================
-    # 1. HISTORIA CLÍNICA GENERAL
-    # =========================================================================
     header_data = [
         [
             Paragraph("<b>ESCUELA DE SALUD SAN PEDRO CLAVER</b>", title_style),
@@ -175,9 +172,6 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
     t_firmas_hc.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER'), ('VALIGN', (0,0), (-1,-1), 'BOTTOM')]))
     story.append(t_firmas_hc)
 
-    # =========================================================================
-    # 2. ANEXOS DE CONSENTIMIENTOS INFORMADOS (TEXTOS EXACTOS DE TUS PDF)
-    # =========================================================================
     consentimientos_str = str(datos_hc.get("Consentimientos Seleccionados", "") or "").strip()
     if not consentimientos_str or consentimientos_str.lower().startswith("ninguno"):
         lista_activos = []
@@ -248,7 +242,6 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
             t_pie_r.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'BOTTOM'), ('TOPPADDING', (0,0), (-1,-1), 1), ('BOTTOMPADDING', (0,0), (-1,-1), 1)]))
             story.append(t_pie_r)
 
-        # B. HIGIENE ORAL
         elif "higiene" in cons_lower:
             head_cons = [[Paragraph("<b>CONSENTIMIENTO INFORMADO PARA HIGIENE ORAL</b>", cons_title_style), img_logo]]
             t_head_c = Table(head_cons, colWidths=[410, 130])
