@@ -186,6 +186,7 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
 
     img_logo = ""
     if os.path.exists("logo.png"):
+        
         try:
             img_logo = Image("logo.png", width=110, height=45)
         except Exception:

@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, date
 import os
 import base64
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from streamlit_image_coordinates import streamlit_image_coordinates
 from pdf_generator import generar_pdf_hc
 
@@ -78,6 +78,14 @@ if "marcas_odontograma" not in st.session_state:
 
 if "convencion_odontograma" not in st.session_state:
     st.session_state.convencion_odontograma = "Caries"
+
+# Contador que renueva el lienzo del odontograma después de cada cambio
+if "odonto_version" not in st.session_state:
+    st.session_state.odonto_version = 0
+
+# Último clic ya procesado (evita marcas duplicadas al pulsar botones)
+if "ultimo_click_odonto" not in st.session_state:
+    st.session_state.ultimo_click_odonto = None
 
 # --- PESTAÑAS ---
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
@@ -321,96 +329,150 @@ with tab4:
             "gris": "Gris", "morado": "Morado"
         }
 
+        # ---------- PASO 1: HACER CLIC EN LA IMAGEN ----------
+        st.markdown("**Haz clic sobre el diente o la superficie donde va la marca:**")
+
+        ANCHO_VISOR = 1200     # ancho fijo con el que se muestra la imagen
+        TAMANO_MARCAS = 0.40   # tamaño fijo de lo pintado
+
         imagen_base = Image.open(ruta_odontograma).convert("RGB")
+        ancho_img, alto_img = imagen_base.size
+        # Factor para que las marcas se vean del mismo tamaño sin importar la resolución de la imagen
+        factor = (ancho_img / ANCHO_VISOR) * TAMANO_MARCAS
+
+        def r(valor):
+            return max(1, int(round(valor * factor)))
+
+        try:
+            fuente_s = ImageFont.load_default(size=r(22))
+        except TypeError:
+            fuente_s = ImageFont.load_default()
+
         imagen_marcada = imagen_base.copy()
         lienzo = ImageDraw.Draw(imagen_marcada)
 
         def dibujar_marca(lienzo, marca):
+            # Las marcas se guardan en píxeles de la imagen original
             x, y = marca["x"], marca["y"]
             color_nombre, figura = convenciones[marca["convencion"]]
             color = colores[color_nombre]
-            radio = 11
+            radio = r(11)
+            grosor = r(4)
             if figura == "circle":
-                lienzo.ellipse((x - radio, y - radio, x + radio, y + radio), outline=color, width=4)
+                lienzo.ellipse((x - radio, y - radio, x + radio, y + radio), outline=color, width=grosor)
             elif figura == "ring_blue":
-                lienzo.ellipse((x - radio, y - radio, x + radio, y + radio), outline="#2563eb", width=4)
-                lienzo.ellipse((x - 5, y - 5, x + 5, y + 5), fill=color)
+                lienzo.ellipse((x - radio, y - radio, x + radio, y + radio), outline="#2563eb", width=grosor)
+                lienzo.ellipse((x - r(5), y - r(5), x + r(5), y + r(5)), fill=color)
             elif figura == "ring_red":
-                lienzo.ellipse((x - radio, y - radio, x + radio, y + radio), outline="#dc2626", width=4)
-                lienzo.ellipse((x - 5, y - 5, x + 5, y + 5), fill=color)
+                lienzo.ellipse((x - radio, y - radio, x + radio, y + radio), outline="#dc2626", width=grosor)
+                lienzo.ellipse((x - r(5), y - r(5), x + r(5), y + r(5)), fill=color)
             elif figura == "dot":
-                lienzo.ellipse((x - 7, y - 7, x + 7, y + 7), fill=color)
+                lienzo.ellipse((x - r(7), y - r(7), x + r(7), y + r(7)), fill=color)
             elif figura == "triangle":
-                lienzo.polygon([(x, y - 13), (x - 12, y + 10), (x + 12, y + 10)], fill=color)
+                lienzo.polygon([(x, y - r(13)), (x - r(12), y + r(10)), (x + r(12), y + r(10))], fill=color)
             elif figura == "x":
-                lienzo.line((x - 10, y - 10, x + 10, y + 10), fill=color, width=4)
-                lienzo.line((x + 10, y - 10, x - 10, y + 10), fill=color, width=4)
+                lienzo.line((x - r(10), y - r(10), x + r(10), y + r(10)), fill=color, width=grosor)
+                lienzo.line((x + r(10), y - r(10), x - r(10), y + r(10)), fill=color, width=grosor)
             elif figura == "line":
-                lienzo.line((x - 14, y, x + 14, y), fill=color, width=5)
+                lienzo.line((x - r(14), y, x + r(14), y), fill=color, width=r(5))
             elif figura == "s":
-                lienzo.text((x - 7, y - 12), "S", fill=color, stroke_width=1)
+                lienzo.text((x, y), "S", fill=color, font=fuente_s, anchor="mm")
             elif figura == "o":
-                lienzo.ellipse((x - 10, y - 10, x + 10, y + 10), outline=color, width=4)
+                lienzo.ellipse((x - r(10), y - r(10), x + r(10), y + r(10)), outline=color, width=grosor)
             elif figura == "equals":
-                lienzo.line((x - 13, y - 5, x + 13, y - 5), fill=color, width=4)
-                lienzo.line((x - 13, y + 5, x + 13, y + 5), fill=color, width=4)
+                lienzo.line((x - r(13), y - r(5), x + r(13), y - r(5)), fill=color, width=grosor)
+                lienzo.line((x - r(13), y + r(5), x + r(13), y + r(5)), fill=color, width=grosor)
             elif figura == "up":
-                lienzo.line((x, y + 12, x, y - 10), fill=color, width=4)
-                lienzo.line((x, y - 10, x - 7, y - 2), fill=color, width=4)
-                lienzo.line((x, y - 10, x + 7, y - 2), fill=color, width=4)
+                lienzo.line((x, y + r(12), x, y - r(10)), fill=color, width=grosor)
+                lienzo.line((x, y - r(10), x - r(7), y - r(2)), fill=color, width=grosor)
+                lienzo.line((x, y - r(10), x + r(7), y - r(2)), fill=color, width=grosor)
             elif figura == "left":
-                lienzo.line((x + 12, y, x - 10, y), fill=color, width=4)
-                lienzo.line((x - 10, y, x - 2, y - 7), fill=color, width=4)
-                lienzo.line((x - 10, y, x - 2, y + 7), fill=color, width=4)
+                lienzo.line((x + r(12), y, x - r(10), y), fill=color, width=grosor)
+                lienzo.line((x - r(10), y, x - r(2), y - r(7)), fill=color, width=grosor)
+                lienzo.line((x - r(10), y, x - r(2), y + r(7)), fill=color, width=grosor)
 
         for marca in st.session_state.marcas_odontograma:
             dibujar_marca(lienzo, marca)
 
-        espacio_izquierdo, centro_odontograma, espacio_derecho = st.columns([1, 3, 1])
-        with centro_odontograma:
+        clave_canvas = f"odontograma_canvas_{st.session_state.odonto_version}"
+        # Alinear el visor al centro de la pantalla para que la imagen quede centrada
+        st.markdown(
+            "<style>iframe[title='streamlit_image_coordinates.streamlit_image_coordinates']"
+            "{display:block;margin:0 auto;max-width:100%;}</style>",
+            unsafe_allow_html=True
+        )
+        col_izq, col_centro, col_der = st.columns([1, 10, 1])
+        with col_centro:
+            st.markdown('<div style="display:flex; justify-content:center; width:100%;">', unsafe_allow_html=True)
             coordenada = streamlit_image_coordinates(
                 imagen_marcada,
-                width=916,
-                key=f"odontograma_canvas_{len(st.session_state.marcas_odontograma)}"
+                width=ANCHO_VISOR,
+                key=clave_canvas
             )
+            st.markdown('</div>', unsafe_allow_html=True)
+
         if coordenada:
-            nueva_marca = {
-                "x": int(coordenada["x"]),
-                "y": int(coordenada["y"]),
-                "convencion": st.session_state.convencion_odontograma,
-                "Diente": f"Ubicación ({int(coordenada['x'])}, {int(coordenada['y'])})",
-                "Hallazgo": st.session_state.convencion_odontograma,
-                "Superficies": "Pieza completa",
-                "Observación": "Marcada directamente sobre el odontograma"
-            }
-            ultima_marca = st.session_state.marcas_odontograma[-1] if st.session_state.marcas_odontograma else None
-            if ultima_marca != nueva_marca:
+            # Identificador único del clic: si ya se procesó (p. ej. al pulsar un botón), se ignora
+            firma_click = (clave_canvas, coordenada["x"], coordenada["y"], coordenada.get("unix_time"))
+            if st.session_state.ultimo_click_odonto != firma_click:
+                st.session_state.ultimo_click_odonto = firma_click
+
+                # Convertir el clic (píxeles en pantalla) a píxeles de la imagen original
+                ancho_mostrado = coordenada.get("width") or ANCHO_VISOR
+                alto_mostrado = coordenada.get("height") or (alto_img * ANCHO_VISOR / ancho_img)
+                x_real = int(coordenada["x"] * ancho_img / ancho_mostrado)
+                y_real = int(coordenada["y"] * alto_img / alto_mostrado)
+
+                convencion = st.session_state.convencion_odontograma
+                nueva_marca = {
+                    "x": x_real,
+                    "y": y_real,
+                    "convencion": convencion,
+                    "Diente": f"Ubicación ({int(coordenada['x'])}, {int(coordenada['y'])})",
+                    "Hallazgo": convencion,
+                    "Superficies": "Pieza completa",
+                    "Observación": "Marcada directamente sobre el odontograma"
+                }
                 st.session_state.marcas_odontograma.append(nueva_marca)
                 st.session_state.plan_tratamiento.append(nueva_marca.copy())
+                st.session_state.odonto_version += 1
                 st.rerun()
 
-        st.markdown("**Selecciona el signo y luego haz clic sobre el diente o la zona correspondiente:**")
+        # ---------- PASO 2: BOTONES DE SIGNOS (DEBAJO DE LA IMAGEN) ----------
         color_activo, figura_activa = convenciones[st.session_state.convencion_odontograma]
         simbolo_activo = simbolos_convenciones[figura_activa]
         st.info(
             f"Signo seleccionado: {simbolo_activo} **{st.session_state.convencion_odontograma}** "
             f"· Color: **{nombres_colores[color_activo]}**"
         )
-        st.markdown('<div class="odontograma-botones">', unsafe_allow_html=True)
+
+        st.markdown("**Selecciona el signo que quieres marcar:**")
         botones_convenciones = st.columns(4)
         for indice, nombre in enumerate(convenciones):
             color, figura = convenciones[nombre]
             simbolo = simbolos_convenciones[figura]
-            etiqueta = f"{simbolo}  {nombre}\n{nombres_colores[color]}"
+            activo = "✅ " if nombre == st.session_state.convencion_odontograma else ""
+            etiqueta = f"{activo}{simbolo}  {nombre}\n{nombres_colores[color]}"
             with botones_convenciones[indice % 4]:
                 if st.button(etiqueta, key=f"convencion_{figura}_{nombre}", use_container_width=True):
                     st.session_state.convencion_odontograma = nombre
                     st.rerun()
-        if st.button("🧹 Borrar todas las marcas", key="borrar_marcas_odontograma", use_container_width=True):
-            st.session_state.marcas_odontograma = []
-            st.session_state.plan_tratamiento = []
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+
+        col_deshacer, col_borrar = st.columns(2)
+        with col_deshacer:
+            if st.button("↩️ Deshacer última marca", key="deshacer_marca_odontograma", use_container_width=True,
+                         disabled=not st.session_state.marcas_odontograma):
+                st.session_state.marcas_odontograma.pop()
+                if st.session_state.plan_tratamiento:
+                    st.session_state.plan_tratamiento.pop()
+                st.session_state.odonto_version += 1
+                st.rerun()
+        with col_borrar:
+            if st.button("🧹 Borrar todas las marcas", key="borrar_marcas_odontograma", use_container_width=True):
+                st.session_state.marcas_odontograma = []
+                st.session_state.plan_tratamiento = []
+                st.session_state.odonto_version += 1
+                st.rerun()
         st.caption(f"Marcas registradas: {len(st.session_state.marcas_odontograma)}")
     else:
         st.info("💡 Asegúrate de guardar la imagen del esquema dental en la misma carpeta como 'odontograma.jpg' o 'odontograma.png'.")
