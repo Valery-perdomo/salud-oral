@@ -321,9 +321,8 @@ with tab4:
         }
 
         st.markdown("**Haz clic sobre el diente o la superficie donde va la marca:**")
-
-        ANCHO_VISOR = 1200    
-        TAMANO_MARCAS = 0.40   
+        ANCHO_VISOR = 1000    
+        TAMANO_MARCAS = 0.38   
 
         imagen_base = Image.open(ruta_odontograma).convert("RGB")
         ancho_img, alto_img = imagen_base.size
