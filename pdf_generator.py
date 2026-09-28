@@ -28,7 +28,8 @@ def esc(valor):
         return ""
     return html.escape(str(valor))
 
-def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=None, firma_odonto_file=None):
+def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=None, firma_odonto_file=None,
+                   odontograma_png=None):
     buffer = io.BytesIO()
     
     doc = SimpleDocTemplate(
@@ -74,6 +75,9 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
     img_pac = procesar_imagen_firma(firma_paciente_file, width=120, height=35)
     img_odo = procesar_imagen_firma(firma_odonto_file, width=120, height=35)
 
+    # =========================================================================
+    # 1. HISTORIA CLÍNICA GENERAL
+    # =========================================================================
     header_data = [
         [
             Paragraph("<b>ESCUELA DE SALUD SAN PEDRO CLAVER</b>", title_style),
@@ -112,6 +116,16 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
     story.append(Paragraph("3. DIAGNÓSTICOS Y PLAN DE TRATAMIENTO", section_title_style))
     story.append(Paragraph(f"<b>Diagnósticos (CIE-10):</b> {esc(datos_hc.get('Diags', 'Sin registro'))}", body_style))
     story.append(Paragraph(f"<b>Plan de Tratamiento:</b> {esc(datos_hc.get('Plan Resumen', 'No especificado'))}", body_style))
+
+    # Odontograma dibujado (imagen generada por la app)
+    if odontograma_png:
+        from reportlab.lib.utils import ImageReader
+        ancho_px, alto_px = ImageReader(io.BytesIO(odontograma_png)).getSize()
+        ancho_pdf = 540
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(f"<b>Odontograma</b> — {esc(datos_hc.get('Dentadura', ''))} · "
+                               f"{esc(datos_hc.get('Indices', ''))}", body_style))
+        story.append(Image(io.BytesIO(odontograma_png), width=ancho_pdf, height=ancho_pdf * alto_px / ancho_px))
 
     if plan_tratamiento:
         story.append(Spacer(1, 3))
@@ -172,6 +186,9 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
     t_firmas_hc.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER'), ('VALIGN', (0,0), (-1,-1), 'BOTTOM')]))
     story.append(t_firmas_hc)
 
+    # =========================================================================
+    # 2. ANEXOS DE CONSENTIMIENTOS INFORMADOS (TEXTOS EXACTOS DE TUS PDF)
+    # =========================================================================
     consentimientos_str = str(datos_hc.get("Consentimientos Seleccionados", "") or "").strip()
     if not consentimientos_str or consentimientos_str.lower().startswith("ninguno"):
         lista_activos = []
@@ -242,6 +259,7 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
             t_pie_r.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'BOTTOM'), ('TOPPADDING', (0,0), (-1,-1), 1), ('BOTTOMPADDING', (0,0), (-1,-1), 1)]))
             story.append(t_pie_r)
 
+        # B. HIGIENE ORAL
         elif "higiene" in cons_lower:
             head_cons = [[Paragraph("<b>CONSENTIMIENTO INFORMADO PARA HIGIENE ORAL</b>", cons_title_style), img_logo]]
             t_head_c = Table(head_cons, colWidths=[410, 130])

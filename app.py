@@ -3,9 +3,11 @@ import pandas as pd
 from datetime import datetime, date
 import os
 import base64
-from PIL import Image, ImageDraw, ImageFont
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont, ImageColor, ImageFilter
 from streamlit_image_coordinates import streamlit_image_coordinates
 from pdf_generator import generar_pdf_hc
+import odontograma as odo
 
 st.set_page_config(
     page_title="Historia Clínica Odontológica - San Pedro Claver",
@@ -13,6 +15,7 @@ st.set_page_config(
     layout="wide"
 )
 
+# Ocultar el menú de hamburguesa y barra superior de Streamlit
 hide_streamlit_style = """
 <style>
 #MainMenu {visibility: hidden;}
@@ -22,6 +25,7 @@ header {visibility: hidden;}
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
+# Cargar CSS
 def cargar_css(file_name):
     if os.path.exists(file_name):
         with open(file_name, "r", encoding="utf-8") as f:
@@ -39,6 +43,7 @@ def get_image_base64(path):
 logo_b64 = get_image_base64("logo.png")
 logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 70px; margin-right: 20px;">' if logo_b64 else '🦷 '
 
+# HEADER INSTITUCIONAL
 st.markdown(f"""
     <div class="header-banner">
         <div style="display: flex; align-items: center;">
@@ -55,6 +60,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
+# Barra de estado limpia (sin el botón de borrado)
 st.markdown("""
     <div style="padding: 10px 0; color: #0f766e; font-size: 13px; font-weight: 600;">
         <b>Consulta nueva</b> / Completa los módulos en orden para construir el expediente. &nbsp;&nbsp;|&nbsp;&nbsp; 
@@ -62,24 +68,33 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+# Inicializar estados de sesión
 if "evoluciones" not in st.session_state:
     st.session_state.evoluciones = []
 
 if "plan_tratamiento" not in st.session_state:
     st.session_state.plan_tratamiento = []
 
-if "marcas_odontograma" not in st.session_state:
-    st.session_state.marcas_odontograma = []
+# Odontograma: {"17-arriba": "Caries"} por superficie y {"17": "Endodoncia indicada"} por diente
+if "odo_superficies" not in st.session_state:
+    st.session_state.odo_superficies = {}
+if "odo_dientes" not in st.session_state:
+    st.session_state.odo_dientes = {}
+if "odo_historial" not in st.session_state:
+    st.session_state.odo_historial = []
 
 if "convencion_odontograma" not in st.session_state:
     st.session_state.convencion_odontograma = "Caries"
 
+# Contador que renueva el lienzo del odontograma después de cada cambio
 if "odonto_version" not in st.session_state:
     st.session_state.odonto_version = 0
 
+# Último clic ya procesado (evita marcas duplicadas al pulsar botones)
 if "ultimo_click_odonto" not in st.session_state:
     st.session_state.ultimo_click_odonto = None
 
+# --- PESTAÑAS ---
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "1. Datos Administrativos", 
     "2. Anamnesis y Antecedentes", 
@@ -89,7 +104,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "6. Firmas y Consentimientos"
 ])
 
-# --- TAB 1
+# --- TAB 1: DATOS ADMINISTRATIVOS Y DE IDENTIFICACIÓN ---
 with tab1:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 0</span><b style="color: #0f172a; font-size: 15px;">Datos Administrativos de la Consulta</b></div><br>', unsafe_allow_html=True)
@@ -135,6 +150,7 @@ with tab1:
         direccion = st.text_input("Dirección de Vivienda", value="", placeholder="Dirección...", key="input_dir")
         telefono = st.text_input("Teléfono de Contacto", value="", placeholder="Teléfono...", key="input_tel")
         
+        # Selector de Ciudad / Departamento principal de Colombia
         lista_ciudades = [
             "Neiva / Huila",
             "Bogotá D.C.",
@@ -167,7 +183,7 @@ with tab1:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TAB 2
+# --- TAB 2: ANAMNESIS Y ANTECEDENTES MÉDICOS ---
 with tab2:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 2</span><b style="color: #0f172a; font-size: 15px;">Anamnesis y Antecedentes Médicos</b></div><br>', unsafe_allow_html=True)
@@ -213,7 +229,7 @@ with tab2:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TAB 3
+# --- TAB 3: EXAMEN FÍSICO ESTOMATOLÓGICO ---
 with tab3:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 3</span><b style="color: #0f172a; font-size: 15px;">Examen Físico Estomatológico</b></div><br>', unsafe_allow_html=True)
@@ -268,210 +284,119 @@ with tab3:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TAB 4
+# --- TAB 4: ODONTOGRAMA, RADIOGRAFÍAS Y DIAGNÓSTICOS ---
 with tab4:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 4</span><b style="color: #0f172a; font-size: 16px;">Odontograma y Registro FDI</b></div><br>', unsafe_allow_html=True)
     st.markdown('<span class="subseccion-titulo">➖ ESQUEMA DENTAL Y CONVENCIONES CLÍNICAS</span><br><br>', unsafe_allow_html=True)
 
-    tipo_dentadura = st.radio("Tipo de Dentadura Presente", ["Dentadura Permanente", "Dentadura Temporal", "Dentadura Mixta"], index=None, horizontal=True, key="input_dent")
+    # ---------------- ODONTOGRAMA DIBUJADO (sistema FDI) ----------------
+    denticion = st.radio("Tipo de dentición", ["Permanente", "Temporal", "Mixta"],
+                         horizontal=True, key="input_dent")
+    tipo_dentadura = f"Dentición {denticion}"
 
-    ruta_odontograma = None
-    for posible_nombre in ["odontograma.jpg", "odontograma.jpeg", "odontograma.png", "image_318c46.jpg"]:
-        if os.path.exists(posible_nombre):
-            ruta_odontograma = posible_nombre
-            break
-
-    if ruta_odontograma:
-        convenciones = {
-            "Caries": ("rojo", "circle"),
-            "Amalgama": ("azul", "dot"),
-            "Resina o ionómero": ("verde", "dot"),
-            "Cemento temporal": ("gris", "dot"),
-            "Amalgama desadaptada": ("rojo", "ring_blue"),
-            "Resina o ionómero desadaptado": ("verde", "ring_red"),
-            "Endodoncia indicada": ("rojo", "triangle"),
-            "Endodoncia realizada": ("azul", "triangle"),
-            "Exodoncia indicada por caries": ("rojo", "x"),
-            "Exodoncia indicada no por caries": ("azul", "x"),
-            "Diente perdido por caries": ("rojo", "line"),
-            "Diente perdido no por caries": ("azul", "line"),
-            "Sellante adaptado": ("azul", "s"),
-            "Sellante desadaptado": ("rojo", "s"),
-            "Diente en erupción": ("azul", "up"),
-            "Diente sin erupcionar": ("azul", "left"),
-            "Corona adaptada": ("verde", "o"),
-            "Corona desadaptada": ("rojo", "o"),
-            "Prótesis adaptada": ("azul", "equals"),
-            "Prótesis desadaptada": ("rojo", "equals"),
-            "Incrustación": ("morado", "dot"),
-        }
-        colores = {
-            "rojo": "#dc2626", "azul": "#2563eb", "verde": "#16a34a",
-            "gris": "#64748b", "morado": "#9333ea"
-        }
-        simbolos_convenciones = {
-            "circle": "○", "dot": "●", "ring_blue": "◉", "ring_red": "◉",
-            "triangle": "▲", "x": "✕", "line": "━", "s": "S",
-            "up": "↑", "left": "←", "o": "O", "equals": "=",
-        }
-        nombres_colores = {
-            "rojo": "Rojo", "azul": "Azul", "verde": "Verde",
-            "gris": "Gris", "morado": "Morado"
-        }
-
-        st.markdown("**Haz clic sobre el diente o la superficie donde va la marca:**")
-        ANCHO_VISOR = 1000    
-        TAMANO_MARCAS = 0.40   
-
-        imagen_base = Image.open(ruta_odontograma).convert("RGB")
-        ancho_img, alto_img = imagen_base.size
-        factor = (ancho_img / ANCHO_VISOR) * TAMANO_MARCAS
-
-        def r(valor):
-            return max(1, int(round(valor * factor)))
-
-        try:
-            fuente_s = ImageFont.load_default(size=r(22))
-        except TypeError:
-            fuente_s = ImageFont.load_default()
-
-        imagen_marcada = imagen_base.copy()
-        lienzo = ImageDraw.Draw(imagen_marcada)
-
-        def dibujar_marca(lienzo, marca):
-            x, y = marca["x"], marca["y"]
-            color_nombre, figura = convenciones[marca["convencion"]]
-            color = colores[color_nombre]
-            radio = r(11)
-            grosor = r(4)
-            if figura == "circle":
-                lienzo.ellipse((x - radio, y - radio, x + radio, y + radio), outline=color, width=grosor)
-            elif figura == "ring_blue":
-                lienzo.ellipse((x - radio, y - radio, x + radio, y + radio), outline="#2563eb", width=grosor)
-                lienzo.ellipse((x - r(5), y - r(5), x + r(5), y + r(5)), fill=color)
-            elif figura == "ring_red":
-                lienzo.ellipse((x - radio, y - radio, x + radio, y + radio), outline="#dc2626", width=grosor)
-                lienzo.ellipse((x - r(5), y - r(5), x + r(5), y + r(5)), fill=color)
-            elif figura == "dot":
-                lienzo.ellipse((x - r(7), y - r(7), x + r(7), y + r(7)), fill=color)
-            elif figura == "triangle":
-                lienzo.polygon([(x, y - r(13)), (x - r(12), y + r(10)), (x + r(12), y + r(10))], fill=color)
-            elif figura == "x":
-                lienzo.line((x - r(10), y - r(10), x + r(10), y + r(10)), fill=color, width=grosor)
-                lienzo.line((x + r(10), y - r(10), x - r(10), y + r(10)), fill=color, width=grosor)
-            elif figura == "line":
-                lienzo.line((x - r(14), y, x + r(14), y), fill=color, width=r(5))
-            elif figura == "s":
-                lienzo.text((x, y), "S", fill=color, font=fuente_s, anchor="mm")
-            elif figura == "o":
-                lienzo.ellipse((x - r(10), y - r(10), x + r(10), y + r(10)), outline=color, width=grosor)
-            elif figura == "equals":
-                lienzo.line((x - r(13), y - r(5), x + r(13), y - r(5)), fill=color, width=grosor)
-                lienzo.line((x - r(13), y + r(5), x + r(13), y + r(5)), fill=color, width=grosor)
-            elif figura == "up":
-                lienzo.line((x, y + r(12), x, y - r(10)), fill=color, width=grosor)
-                lienzo.line((x, y - r(10), x - r(7), y - r(2)), fill=color, width=grosor)
-                lienzo.line((x, y - r(10), x + r(7), y - r(2)), fill=color, width=grosor)
-            elif figura == "left":
-                lienzo.line((x + r(12), y, x - r(10), y), fill=color, width=grosor)
-                lienzo.line((x - r(10), y, x - r(2), y - r(7)), fill=color, width=grosor)
-                lienzo.line((x - r(10), y, x - r(2), y + r(7)), fill=color, width=grosor)
-
-        for marca in st.session_state.marcas_odontograma:
-            dibujar_marca(lienzo, marca)
-
-        clave_canvas = f"odontograma_canvas_{st.session_state.odonto_version}"
-        st.markdown(
-            "<style>iframe[title='streamlit_image_coordinates.streamlit_image_coordinates']"
-            "{display:block;margin:0 auto;max-width:100%;}</style>",
-            unsafe_allow_html=True
-        )
-        col_izq, col_centro, col_der = st.columns([1, 10, 1])
-        with col_centro:
-            st.markdown('<div style="display:flex; justify-content:center; width:100%;">', unsafe_allow_html=True)
-            coordenada = streamlit_image_coordinates(
-                imagen_marcada,
-                width=ANCHO_VISOR,
-                key=clave_canvas
-            )
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        if coordenada:
-            firma_click = (clave_canvas, coordenada["x"], coordenada["y"], coordenada.get("unix_time"))
-            if st.session_state.ultimo_click_odonto != firma_click:
-                st.session_state.ultimo_click_odonto = firma_click
-
-                # Convertir el clic (píxeles en pantalla) a píxeles de la imagen original
-                ancho_mostrado = coordenada.get("width") or ANCHO_VISOR
-                alto_mostrado = coordenada.get("height") or (alto_img * ANCHO_VISOR / ancho_img)
-                x_real = int(coordenada["x"] * ancho_img / ancho_mostrado)
-                y_real = int(coordenada["y"] * alto_img / alto_mostrado)
-
-                convencion = st.session_state.convencion_odontograma
-                nueva_marca = {
-                    "x": x_real,
-                    "y": y_real,
-                    "convencion": convencion,
-                    "Diente": f"Ubicación ({int(coordenada['x'])}, {int(coordenada['y'])})",
-                    "Hallazgo": convencion,
-                    "Superficies": "Pieza completa",
-                    "Observación": "Marcada directamente sobre el odontograma"
-                }
-                st.session_state.marcas_odontograma.append(nueva_marca)
-                st.session_state.plan_tratamiento.append(nueva_marca.copy())
-                st.session_state.odonto_version += 1
-                st.rerun()
-
-        color_activo, figura_activa = convenciones[st.session_state.convencion_odontograma]
-        simbolo_activo = simbolos_convenciones[figura_activa]
-        st.info(
-            f"Signo seleccionado: {simbolo_activo} **{st.session_state.convencion_odontograma}** "
-            f"· Color: **{nombres_colores[color_activo]}**"
-        )
-
-        st.markdown("**Selecciona el signo que quieres marcar:**")
-        botones_convenciones = st.columns(4)
-        for indice, nombre in enumerate(convenciones):
-            color, figura = convenciones[nombre]
-            simbolo = simbolos_convenciones[figura]
-            activo = "✅ " if nombre == st.session_state.convencion_odontograma else ""
-            etiqueta = f"{activo}{simbolo}  {nombre}\n{nombres_colores[color]}"
-            with botones_convenciones[indice % 4]:
-                if st.button(etiqueta, key=f"convencion_{figura}_{nombre}", use_container_width=True):
+    # 1) Barra de convenciones: un ícono por signo (al pasar el mouse sale el nombre)
+    nombres_conv = list(odo.CONVENCIONES.keys())
+    por_fila = 12
+    for inicio in range(0, len(nombres_conv), por_fila):
+        columnas = st.columns(por_fila)
+        for col, nombre in zip(columnas, nombres_conv[inicio:inicio + por_fila]):
+            with col:
+                tipo_btn = "primary" if nombre == st.session_state.convencion_odontograma else "secondary"
+                if st.button(odo.CONVENCIONES[nombre]["icono"], key=f"conv_{nombre}", help=nombre,
+                             type=tipo_btn, use_container_width=True):
                     st.session_state.convencion_odontograma = nombre
                     st.rerun()
 
-        col_deshacer, col_borrar = st.columns(2)
-        with col_deshacer:
-            if st.button("↩️ Deshacer última marca", key="deshacer_marca_odontograma", use_container_width=True,
-                        disabled=not st.session_state.marcas_odontograma):
-                st.session_state.marcas_odontograma.pop()
-                if st.session_state.plan_tratamiento:
-                    st.session_state.plan_tratamiento.pop()
+    conv_activa = st.session_state.convencion_odontograma
+    info_activa = odo.CONVENCIONES[conv_activa]
+    como = {"superficie": "toca la superficie del diente",
+            "diente": "toca cualquier parte del diente (se marca completo)",
+            "borrar": "toca una superficie o diente para limpiarlo"}[info_activa["tipo"]]
+    st.markdown(f"{info_activa['icono']} **{conv_activa}** — {como}")
+
+    # 2) Dibujo del odontograma y detección del clic
+    imagen_odo = odo.dibujar(denticion, st.session_state.odo_superficies, st.session_state.odo_dientes)
+    clave_canvas = f"odontograma_canvas_{st.session_state.odonto_version}"
+    # Centrar el odontograma en la página
+    st.markdown(f"""<style>
+        div[data-testid="stElementContainer"]:has(iframe[title="streamlit_image_coordinates.streamlit_image_coordinates"]),
+        div.element-container:has(iframe[title="streamlit_image_coordinates.streamlit_image_coordinates"]) {{
+            display: flex; justify-content: center; width: 100% !important;
+        }}
+        iframe[title="streamlit_image_coordinates.streamlit_image_coordinates"] {{
+            width: {odo.ANCHO}px !important; max-width: 100%; margin: 0 auto; display: block;
+        }}
+    </style>""", unsafe_allow_html=True)
+    coordenada = streamlit_image_coordinates(imagen_odo, width=odo.ANCHO, key=clave_canvas)
+
+    if coordenada:
+        firma_click = (clave_canvas, coordenada["x"], coordenada["y"], coordenada.get("unix_time"))
+        if st.session_state.ultimo_click_odonto != firma_click:
+            st.session_state.ultimo_click_odonto = firma_click
+            # Pasar el clic a la escala del dibujo por si el navegador achicó la imagen
+            ancho_mostrado = coordenada.get("width") or odo.ANCHO
+            x = coordenada["x"] * odo.ANCHO / ancho_mostrado
+            y = coordenada["y"] * odo.ANCHO / ancho_mostrado
+            diente, sup = odo.detectar(denticion, x, y)
+            if diente is not None:
+                # Guardar copia para poder deshacer
+                st.session_state.odo_historial.append(
+                    (dict(st.session_state.odo_superficies), dict(st.session_state.odo_dientes)))
+                clave_sup, clave_diente = f"{diente}-{sup}", str(diente)
+                if info_activa["tipo"] == "superficie":
+                    if st.session_state.odo_superficies.get(clave_sup) == conv_activa:
+                        st.session_state.odo_superficies.pop(clave_sup)   # tocar de nuevo = quitar
+                    else:
+                        st.session_state.odo_superficies[clave_sup] = conv_activa
+                elif info_activa["tipo"] == "diente":
+                    if st.session_state.odo_dientes.get(clave_diente) == conv_activa:
+                        st.session_state.odo_dientes.pop(clave_diente)
+                    else:
+                        st.session_state.odo_dientes[clave_diente] = conv_activa
+                else:  # borrar
+                    if clave_diente in st.session_state.odo_dientes:
+                        st.session_state.odo_dientes.pop(clave_diente)
+                    else:
+                        st.session_state.odo_superficies.pop(clave_sup, None)
                 st.session_state.odonto_version += 1
                 st.rerun()
-        with col_borrar:
-            if st.button("🧹 Borrar todas las marcas", key="borrar_marcas_odontograma", use_container_width=True):
-                st.session_state.marcas_odontograma = []
-                st.session_state.plan_tratamiento = []
-                st.session_state.odonto_version += 1
-                st.rerun()
-        st.caption(f"Marcas registradas: {len(st.session_state.marcas_odontograma)}")
-    else:
-        st.info("💡 Asegúrate de guardar la imagen del esquema dental en la misma carpeta como 'odontograma.jpg' o 'odontograma.png'.")
 
-    st.write("---")
+    # 3) Deshacer / borrar todo
+    col_deshacer, col_borrar = st.columns(2)
+    with col_deshacer:
+        if st.button("↩️ Deshacer última marca", key="deshacer_marca_odontograma", use_container_width=True,
+                     disabled=not st.session_state.odo_historial):
+            st.session_state.odo_superficies, st.session_state.odo_dientes = st.session_state.odo_historial.pop()
+            st.session_state.odonto_version += 1
+            st.rerun()
+    with col_borrar:
+        if st.button("🧹 Borrar todo el odontograma", key="borrar_marcas_odontograma", use_container_width=True):
+            st.session_state.odo_historial.append(
+                (dict(st.session_state.odo_superficies), dict(st.session_state.odo_dientes)))
+            st.session_state.odo_superficies, st.session_state.odo_dientes = {}, {}
+            st.session_state.odonto_version += 1
+            st.rerun()
 
-    if st.session_state.marcas_odontograma:
-        st.write("---")
-        st.markdown("**Tabla de ubicaciones y convenciones registradas**")
-        tabla_odontograma = pd.DataFrame(st.session_state.marcas_odontograma)
-        st.dataframe(
-            tabla_odontograma[["Diente", "Hallazgo", "Superficies", "Observación"]].rename(columns={"Diente": "Ubicación"}),
-            use_container_width=True,
-            hide_index=True
-        )
+    # 4) Índice O'Leary automático
+    total_sup, sup_tenidas, pct_placa_bacteriana = odo.indice_oleary(
+        denticion, st.session_state.odo_superficies, st.session_state.odo_dientes)
+    st.markdown("**Índice de placa O'Leary** (se marca con el ícono amarillo de placa bacteriana)")
+    o1, o2, o3 = st.columns(3)
+    o1.metric("Total superficies", total_sup)
+    o2.metric("Superficies teñidas", sup_tenidas)
+    o3.metric("Índice O'Leary", f"{pct_placa_bacteriana} %")
+    st.caption("Total = dientes presentes × 4 superficies (no cuenta perdidos ni sin erupcionar). "
+               "Índice = superficies teñidas ÷ total × 100.")
+
+    # 5) Tabla de hallazgos (también va al PDF)
+    st.session_state.plan_tratamiento = odo.tabla_hallazgos(
+        st.session_state.odo_superficies, st.session_state.odo_dientes)
+    odontograma_png = odo.a_png(imagen_odo)
+    if st.session_state.plan_tratamiento:
+        st.markdown("**Hallazgos registrados en el odontograma**")
+        st.dataframe(pd.DataFrame(st.session_state.plan_tratamiento)[["Diente", "Hallazgo", "Superficies"]],
+                     use_container_width=True, hide_index=True)
 
     st.markdown('<span class="subseccion-titulo">➖ AYUDAS DIAGNÓSTICAS Y ÍNDICES</span><br><br>', unsafe_allow_html=True)
     rx1, rx2, rx3, rx4 = st.columns(4)
@@ -485,7 +410,7 @@ with tab4:
         placas_tomadas = st.number_input("Placas Tomadas", min_value=0, value=0, key="input_pltom")
         placas_danadas = st.number_input("Placas Dañadas", min_value=0, value=0, key="input_pldan")
     with rx4:
-        pct_placa_bacteriana = st.number_input("% Placa Bacteriana", min_value=0, max_value=100, value=0, key="input_pctplaca")
+        st.metric("% Placa bacteriana (O'Leary)", f"{pct_placa_bacteriana} %")
         pronostico_gral = st.selectbox("Pronóstico", ["Seleccione...", "Favorable", "Desfavorable"], key="input_pron")
 
     st.markdown('<span class="subseccion-titulo">➖ DIAGNÓSTICOS Y PLAN GENERAL</span><br><br>', unsafe_allow_html=True)
@@ -505,7 +430,7 @@ with tab4:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TAB 5
+# --- TAB 5: EVOLUCIÓN ---
 with tab5:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 5</span><b style="color: #0f172a; font-size: 15px;">Evolución del Tratamiento</b></div><br>', unsafe_allow_html=True)
@@ -532,7 +457,7 @@ with tab5:
         st.dataframe(pd.DataFrame(st.session_state.evoluciones), use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TAB 6
+# --- TAB 6: FIRMAS Y CONSENTIMIENTOS INFORMADOS ---
 with tab6:
     st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
     st.markdown('<div><span class="badge-modulo">MÓDULO 6</span><b style="color: #0f172a; font-size: 15px;">Consentimientos Informados y Firmas Digitales</b></div><br>', unsafe_allow_html=True)
@@ -670,6 +595,8 @@ with tab6:
             st.image(file_firma_odonto, width=160)
 
     st.write("---")
+
+    # BOTÓN GENERAL GENERAR PDF
     if st.button("🔒 GENERAR Y COMPILAR PDF COMPLETO", use_container_width=True):
         if nombre_paciente and nombre_odonto:
             datos_hc = {
@@ -728,7 +655,8 @@ with tab6:
                 st.session_state.plan_tratamiento, 
                 st.session_state.evoluciones,
                 firma_paciente_file=file_firma_paciente,
-                firma_odonto_file=file_firma_odonto
+                firma_odonto_file=file_firma_odonto,
+                odontograma_png=odontograma_png
             )
 
             st.download_button(
