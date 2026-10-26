@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
+import html
 import os
 import base64
 import numpy as np
@@ -454,7 +455,31 @@ with tab5:
 
     if st.session_state.evoluciones:
         st.write("---")
-        st.dataframe(pd.DataFrame(st.session_state.evoluciones), use_container_width=True)
+        # Encabezado de la tabla
+        h1, h2, h3, h4 = st.columns([1.2, 1.2, 5, 0.8])
+        h1.markdown("**Fecha**")
+        h2.markdown("**Diente/Sitio**")
+        h3.markdown("**Tratamiento Ejecutado**")
+        h4.markdown("**Borrar**")
+
+        borrar_idx = None
+        for i, ev in enumerate(st.session_state.evoluciones):
+            c1, c2, c3, c4 = st.columns([1.2, 1.2, 5, 0.8])
+            # word-break hace que el texto largo (aunque no tenga espacios) baje de línea
+            for col, campo in ((c1, "Fecha y Hora"), (c2, "Diente/Sitio"), (c3, "Tratamiento Ejecutado")):
+                texto = html.escape(str(ev.get(campo, ""))).replace("\n", "<br>")
+                col.markdown(f'<div style="word-break: break-word; overflow-wrap: anywhere; white-space: normal;">{texto}</div>', unsafe_allow_html=True)
+            if c4.button("🗑️", key=f"borrar_ev_{i}", help="Borrar esta evolución"):
+                borrar_idx = i
+
+        if borrar_idx is not None:
+            st.session_state.evoluciones.pop(borrar_idx)
+            st.rerun()
+
+        st.write("")
+        if st.button("🗑️ BORRAR TODAS LAS EVOLUCIONES", key="borrar_todas_ev"):
+            st.session_state.evoluciones = []
+            st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- TAB 6: FIRMAS Y CONSENTIMIENTOS INFORMADOS ---

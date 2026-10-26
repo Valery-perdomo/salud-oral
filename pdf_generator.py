@@ -156,15 +156,23 @@ def generar_pdf_hc(datos_hc, plan_tratamiento, evoluciones, firma_paciente_file=
     # EVOLUCIÓN
     story.append(Paragraph("4. REGISTRO DE EVOLUCIÓN CLÍNICA", section_title_style))
     if evoluciones:
-        evo_data = [["Fecha", "Diente/Sitio", "Tratamiento Ejecutado"]]
+        # Paragraph hace que el texto largo baje de línea dentro de la celda
+        # (splitLongWords corta también palabras muy largas sin espacios)
+        evo_cell_style = ParagraphStyle('EvoCell', parent=body_style, fontSize=9, leading=11.5, splitLongWords=1)
+        evo_head_style = ParagraphStyle('EvoHead', parent=evo_cell_style, textColor=colors.white)
+        evo_data = [[
+            Paragraph("Fecha", evo_head_style),
+            Paragraph("Diente/Sitio", evo_head_style),
+            Paragraph("Tratamiento Ejecutado", evo_head_style)
+        ]]
         for ev in evoluciones:
             evo_data.append([
-                esc(ev.get("Fecha y Hora", "")), 
-                esc(ev.get("Diente/Sitio", "")), 
-                esc(ev.get("Tratamiento Ejecutado", ""))
+                Paragraph(esc(ev.get("Fecha y Hora", "")), evo_cell_style),
+                Paragraph(esc(ev.get("Diente/Sitio", "")), evo_cell_style),
+                Paragraph(esc(ev.get("Tratamiento Ejecutado", "")).replace("\n", "<br/>"), evo_cell_style)
             ])
-        t_evo = Table(evo_data, colWidths=[90, 110, 340])
-        t_evo.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,0), PRIMARY_COLOR), ('TEXTCOLOR', (0,0), (-1,0), colors.white), ('GRID', (0,0), (-1,-1), 0.5, BORDER_COLOR), ('TOPPADDING', (0,0), (-1,-1), 2), ('BOTTOMPADDING', (0,0), (-1,-1), 2)]))
+        t_evo = Table(evo_data, colWidths=[75, 95, 370], repeatRows=1)
+        t_evo.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,0), PRIMARY_COLOR), ('GRID', (0,0), (-1,-1), 0.5, BORDER_COLOR), ('VALIGN', (0,0), (-1,-1), 'TOP'), ('TOPPADDING', (0,0), (-1,-1), 3), ('BOTTOMPADDING', (0,0), (-1,-1), 3)]))
         story.append(t_evo)
     else:
         story.append(Paragraph("Sin novedades registradas en esta consulta.", body_style))
