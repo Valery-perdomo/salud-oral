@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
-import html
 import os
 import base64
+import html
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageColor, ImageFilter
 from streamlit_image_coordinates import streamlit_image_coordinates
@@ -21,7 +21,7 @@ hide_streamlit_style = """
 <style>
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-header {visibility: hidden;}
+[data-testid="stHeader"] {visibility: hidden;}
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -41,33 +41,205 @@ def get_image_base64(path):
             return base64.b64encode(image_file.read()).decode('utf-8')
     return ""
 
+def _html(fragmento: str) -> str:
+    # Streamlit interpreta como Markdown las líneas con sangría: se envía en una sola línea.
+    return " ".join(linea.strip() for linea in fragmento.splitlines() if linea.strip())
+
+
+def encabezado(logo_base64: str, institucion: str) -> None:
+    logo = ""
+    if logo_base64:
+        logo = (
+            '<div class="tw:shrink-0 tw:rounded-2xl tw:bg-white tw:p-3 tw:shadow-lg tw:ring-4 tw:ring-white/30 '
+            'tw:transition tw:duration-300 tw:hover:scale-105 tw:hover:-rotate-2">'
+            f'<img src="data:image/png;base64,{logo_base64}" alt="Escuela de Salud San Pedro Claver" '
+            'class="tw:h-16 tw:w-40 tw:object-contain"></div>'
+        )
+    st.markdown(_html(f"""
+    <div class="tw:group tw:relative tw:mb-4 tw:overflow-hidden tw:rounded-3xl tw:bg-linear-to-r
+                   tw:from-teal-800 tw:via-teal-700 tw:to-emerald-500 tw:px-8 tw:py-6 tw:shadow-xl
+                   tw:transition tw:duration-500 tw:hover:shadow-2xl">
+      <div class="tw:pointer-events-none tw:absolute tw:-right-16 tw:-top-20 tw:size-64 tw:rounded-full
+                  tw:bg-white/10 tw:transition tw:duration-700 tw:group-hover:scale-125"></div>
+      <div class="tw:pointer-events-none tw:absolute tw:-bottom-24 tw:right-1/3 tw:size-56 tw:rounded-full
+                  tw:bg-emerald-300/10 tw:transition tw:duration-700 tw:group-hover:-translate-y-4"></div>
+      <div class="tw:relative tw:flex tw:flex-col tw:items-center tw:gap-5 tw:text-center
+                  tw:md:flex-row tw:md:text-left">
+        {logo}
+        <div class="tw:flex-1">
+          <div class="tw:m-0 tw:text-xs tw:font-semibold tw:uppercase tw:tracking-[0.25em] tw:text-emerald-100">
+            Simulador académico</div>
+          <div class="tw:m-0 tw:text-3xl tw:font-extrabold tw:leading-tight tw:tracking-tight tw:text-white">
+            Historia Clínica Odontológica</div>
+          <div class="tw:m-0 tw:mt-1 tw:text-sm tw:font-medium tw:text-white/90">
+            {html.escape(institucion)} — Programa de Salud Oral · Sede Neiva</div>
+        </div>
+        <div class="tw:flex tw:flex-col tw:items-center tw:gap-2 tw:md:items-end">
+          <span class="tw:inline-flex tw:items-center tw:gap-2 tw:rounded-full tw:bg-white/20 tw:px-4 tw:py-2
+                       tw:text-xs tw:font-bold tw:uppercase tw:tracking-wider tw:text-white tw:backdrop-blur
+                       tw:transition tw:hover:bg-white/30">
+            <span class="tw:relative tw:flex tw:size-2.5">
+              <span class="tw:absolute tw:inline-flex tw:size-full tw:animate-ping tw:rounded-full tw:bg-emerald-300 tw:opacity-75"></span>
+              <span class="tw:relative tw:inline-flex tw:size-2.5 tw:rounded-full tw:bg-emerald-300"></span>
+            </span>
+            Sesión abierta
+          </span>
+          <span class="tw:text-xs tw:text-white/80">🔒 Diligenciamiento seguro</span>
+        </div>
+      </div>
+    </div>
+    """), unsafe_allow_html=True)
+
+
+def seccion(titulo: str, icono: str = "", modulo: int | None = None) -> None:
+    """Tarjeta de título para cada sección del formulario."""
+    badge = ""
+    if modulo is not None:
+        badge = (f'<span class="tw:rounded-full tw:bg-teal-600 tw:px-2.5 tw:py-0.5 tw:text-[0.68rem] '
+                 f'tw:font-bold tw:tracking-wider tw:text-white">MÓDULO {modulo}</span>')
+    st.markdown(_html(f"""
+    <div class="tw:group tw:mt-6 tw:mb-3 tw:flex tw:items-center tw:gap-3 tw:rounded-2xl tw:border
+                tw:border-sky-100 tw:border-l-4 tw:border-l-teal-600 tw:bg-white tw:px-5 tw:py-3
+                tw:shadow-sm tw:transition tw:duration-300 tw:hover:-translate-y-0.5 tw:hover:border-teal-200
+                tw:hover:shadow-md">
+      <span class="tw:grid tw:size-9 tw:place-items-center tw:rounded-xl tw:bg-teal-50 tw:text-lg
+                   tw:transition tw:duration-300 tw:group-hover:scale-110 tw:group-hover:bg-teal-100">{icono}</span>
+      {badge}
+      <span class="tw:text-sm tw:font-extrabold tw:uppercase tw:tracking-wide tw:text-teal-700">
+        {html.escape(titulo)}</span>
+    </div>
+    """), unsafe_allow_html=True)
+
+
+# El botón de descarga puede crear el PDF en el mismo clic (Streamlit 1.50 o más reciente)
+DESCARGA_DIFERIDA = "deferred" in (st.download_button.__doc__ or "").lower()
+
+
+def tarjeta_requisitos(requisitos, listo):
+    """Lista de verificación antes de generar el PDF."""
+    filas = []
+    for nombre, modulo, ok, obligatorio in requisitos:
+        if ok:
+            icono = ('<span class="tw:grid tw:size-6 tw:shrink-0 tw:place-items-center tw:rounded-full tw:bg-emerald-500 '
+                     'tw:text-xs tw:font-bold tw:text-white">✓</span>')
+        elif obligatorio:
+            icono = ('<span class="tw:grid tw:size-6 tw:shrink-0 tw:place-items-center tw:rounded-full tw:bg-rose-100 '
+                     'tw:text-xs tw:font-bold tw:text-rose-600">!</span>')
+        else:
+            icono = ('<span class="tw:grid tw:size-6 tw:shrink-0 tw:place-items-center tw:rounded-full tw:bg-slate-100 '
+                     'tw:text-xs tw:font-bold tw:text-slate-400">○</span>')
+        etiqueta = ('<span class="tw:rounded-full tw:bg-rose-50 tw:px-2 tw:py-0.5 tw:text-[0.62rem] tw:font-bold '
+                    'tw:text-rose-600">Obligatorio</span>' if obligatorio and not ok else
+                    '<span class="tw:text-[0.62rem] tw:font-semibold tw:text-slate-400">Recomendado</span>'
+                    if not ok else '')
+        filas.append(f"""
+        <div class="tw:flex tw:items-center tw:gap-3 tw:rounded-xl tw:border tw:border-slate-100 tw:bg-white tw:px-3 tw:py-2
+                    tw:transition tw:duration-200 tw:hover:border-teal-200 tw:hover:bg-teal-50/40">
+          {icono}
+          <div class="tw:flex-1">
+            <div class="tw:text-sm tw:font-semibold tw:text-slate-700">{html.escape(nombre)}</div>
+            <div class="tw:text-[0.68rem] tw:text-slate-400">{modulo}</div>
+          </div>
+          {etiqueta}
+        </div>""")
+    if listo:
+        titulo = "✅ Todo listo: haz clic en el botón y el PDF se descarga de una vez"
+        color = "tw:border-emerald-200 tw:bg-emerald-50/60 tw:text-emerald-800"
+    else:
+        titulo = "⚠️ Completa los datos obligatorios para habilitar el PDF"
+        color = "tw:border-rose-200 tw:bg-rose-50/60 tw:text-rose-700"
+    st.markdown(_html(f"""
+    <div class="tw:mt-2 tw:mb-4 tw:rounded-2xl tw:border tw:p-4 {color}">
+      <div class="tw:mb-3 tw:text-sm tw:font-bold">{titulo}</div>
+      <div class="tw:grid tw:gap-2 tw:md:grid-cols-2 tw:xl:grid-cols-3">{''.join(filas)}</div>
+    </div>
+    """), unsafe_allow_html=True)
+
+
+ICONOS_MODULO = ["🗂️", "🗣️", "🔎", "🦷", "📈", "✍️"]
+MODULOS = [
+    "1. Datos Administrativos",
+    "2. Anamnesis y Antecedentes",
+    "3. Examen Estomatológico",
+    "4. Odontograma y Diag.",
+    "5. Evolución",
+    "6. Firmas y Consentimientos",
+]
+NAV_KEY = "nav_modulos"  # Pestaña abierta; se cambia haciendo clic en las tarjetas del panel
+
+
+def ir_a_modulo(etiqueta):
+    st.session_state[NAV_KEY] = etiqueta
+
+
+def panel_avance(contenedor, modulos, listo_pdf):
+    """Panel de avance: anillo con el total y una tarjeta por módulo. Cada tarjeta abre su módulo."""
+    total = round(100 * sum(p for _, p in modulos) / max(len(modulos), 1))
+    completos = sum(1 for _, p in modulos if p >= 1)
+    if listo_pdf:
+        estado = ('<span class="tw:inline-flex tw:items-center tw:gap-1.5 tw:rounded-full tw:bg-emerald-100 tw:px-3 '
+                  'tw:py-1.5 tw:text-xs tw:font-bold tw:text-emerald-700">✅ Lista para generar el PDF</span>')
+    else:
+        estado = ('<span class="tw:inline-flex tw:items-center tw:gap-1.5 tw:rounded-full tw:bg-amber-100 tw:px-3 '
+                  'tw:py-1.5 tw:text-xs tw:font-bold tw:text-amber-700">✏️ En diligenciamiento</span>')
+    activo = st.session_state.get(NAV_KEY, MODULOS[0])
+
+    with contenedor.container(key="panel_avance"):
+        st.markdown(_html(f"""
+        <div class="tw:flex tw:flex-wrap tw:items-center tw:gap-4">
+          <div class="tw:grid tw:size-16 tw:shrink-0 tw:place-items-center tw:rounded-full"
+               style="background:conic-gradient(#0d9488 {total * 3.6}deg, #e2e8f0 0deg)">
+            <div class="tw:grid tw:size-12 tw:place-items-center tw:rounded-full tw:bg-white tw:text-sm
+                        tw:font-extrabold tw:text-teal-700">{total}%</div>
+          </div>
+          <div class="tw:min-w-48 tw:flex-1">
+            <div class="tw:text-base tw:font-bold tw:text-slate-800">Avance de la historia clínica</div>
+            <div class="tw:text-xs tw:text-slate-500">{completos} de {len(modulos)} módulos completos ·
+              haz clic en un módulo para abrirlo</div>
+          </div>
+          {estado}
+        </div>
+        """), unsafe_allow_html=True)
+
+        columnas = st.columns(len(modulos))
+        for i, ((nombre, p), col) in enumerate(zip(modulos, columnas), start=1):
+            pct = round(100 * p)
+            if pct >= 100:
+                linea, fondo_icono, relleno = "tw:bg-emerald-400", "tw:bg-emerald-50", "tw:bg-emerald-500"
+                chip = ('<span class="tw:grid tw:size-6 tw:place-items-center tw:rounded-full tw:bg-emerald-500 '
+                        'tw:text-xs tw:font-bold tw:text-white">✓</span>')
+            elif pct > 0:
+                linea, fondo_icono, relleno = "tw:bg-amber-400", "tw:bg-amber-50", "tw:bg-amber-400"
+                chip = ('<span class="tw:rounded-full tw:bg-amber-100 tw:px-2 tw:py-0.5 tw:text-[0.65rem] '
+                        f'tw:font-bold tw:text-amber-700">{pct}%</span>')
+            else:
+                linea, fondo_icono, relleno = "tw:bg-slate-200", "tw:bg-slate-100", "tw:bg-slate-300"
+                chip = '<span class="tw:text-[0.65rem] tw:font-semibold tw:text-slate-400">Pendiente</span>'
+            clase_activa = " tarjeta-activa" if MODULOS[i - 1] == activo else ""
+            with col.container(key=f"tarjeta_{i}"):
+                st.markdown(_html(f"""
+                <div class="tarjeta-modulo{clase_activa} tw:relative tw:overflow-hidden tw:rounded-2xl tw:border
+                            tw:border-slate-200 tw:bg-white tw:p-3.5 tw:shadow-sm">
+                  <div class="tw:absolute tw:inset-x-0 tw:top-0 tw:h-1 {linea}"></div>
+                  <div class="tw:flex tw:items-center tw:justify-between">
+                    <span class="tarjeta-icono tw:grid tw:size-10 tw:place-items-center tw:rounded-xl tw:text-xl
+                                 {fondo_icono}">{ICONOS_MODULO[i - 1]}</span>
+                    {chip}
+                  </div>
+                  <div class="tw:mt-2 tw:text-[0.62rem] tw:font-bold tw:uppercase tw:tracking-widest tw:text-slate-400">Módulo {i}</div>
+                  <div class="tw:min-h-9 tw:text-sm tw:font-bold tw:leading-tight tw:text-slate-800">{html.escape(nombre)}</div>
+                  <div class="tw:mt-2 tw:h-1.5 tw:overflow-hidden tw:rounded-full tw:bg-slate-100">
+                    <div class="tw:h-full tw:rounded-full tw:transition-all tw:duration-700 {relleno}" style="width:{pct}%"></div>
+                  </div>
+                </div>
+                """), unsafe_allow_html=True)
+                # Botón invisible que cubre toda la tarjeta (ver stilo.css)
+                st.button(f"Abrir {nombre}", key=f"nav_{i}", on_click=ir_a_modulo, args=(MODULOS[i - 1],))
+
+
 logo_b64 = get_image_base64("logo.png")
-logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 70px; margin-right: 20px;">' if logo_b64 else '🦷 '
-
-# HEADER INSTITUCIONAL
-st.markdown(f"""
-    <div class="header-banner">
-        <div style="display: flex; align-items: center;">
-            {logo_html}
-            <div>
-                <h1 class="header-title">HISTORIA CLÍNICA ODONTOLÓGICA</h1>
-                <p class="header-subtitle">Escuela de Salud San Pedro Claver — Sede Neiva</p>
-            </div>
-        </div>
-        <div style="text-align: right;">
-            <span class="badge-session">SESIÓN ABIERTA</span>
-            <p style="color: #ccfbf1; font-size: 11px; margin: 4px 0 0 0;">Diligenciamiento seguro</p>
-        </div>
-    </div>
-""", unsafe_allow_html=True)
-
-# Barra de estado limpia (sin el botón de borrado)
-st.markdown("""
-    <div style="padding: 10px 0; color: #0f766e; font-size: 13px; font-weight: 600;">
-        <b>Consulta nueva</b> / Completa los módulos en orden para construir el expediente. &nbsp;&nbsp;|&nbsp;&nbsp; 
-        <span style="color: #475569;">Estado: <b style="color: #059669;">En diligenciamiento</b></span>
-    </div>
-""", unsafe_allow_html=True)
+encabezado(logo_b64, "ESCUELA DE SALUD SAN PEDRO CLAVER")
+panel_progreso = st.empty()  # Se llena al final, cuando ya se conocen todos los datos
 
 # Inicializar estados de sesión
 if "evoluciones" not in st.session_state:
@@ -96,19 +268,25 @@ if "ultimo_click_odonto" not in st.session_state:
     st.session_state.ultimo_click_odonto = None
 
 # --- PESTAÑAS ---
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "1. Datos Administrativos", 
-    "2. Anamnesis y Antecedentes", 
-    "3. Examen Estomatológico",
-    "4. Odontograma y Diag.", 
-    "5. Evolución", 
-    "6. Firmas y Consentimientos"
-])
+# Todas las pestañas se siguen ejecutando (así el PDF tiene todos los datos);
+# la pestaña visible la eligen las tarjetas del panel de avance.
+try:
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(MODULOS, key=NAV_KEY, on_change="rerun")
+    NAVEGACION_CON_TARJETAS = True
+except TypeError:  # Versión de Streamlit sin esta opción: se dejan las pestañas visibles
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(MODULOS)
+    NAVEGACION_CON_TARJETAS = False
+if NAVEGACION_CON_TARJETAS:  # Se oculta la barra de pestañas: se navega con las tarjetas
+    st.markdown("""<style>
+        .stTabs [role="tablist"], .stTabs [data-testid="stTab"],
+        [data-testid="stTabsScrollLeft"], [data-testid="stTabsScrollRight"],
+        .stTabs [data-baseweb="tab-list"], .stTabs [data-baseweb="tab-border"],
+        .stTabs [data-baseweb="tab-highlight"] { display: none !important; }
+    </style>""", unsafe_allow_html=True)
 
 # --- TAB 1: DATOS ADMINISTRATIVOS Y DE IDENTIFICACIÓN ---
 with tab1:
-    st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
-    st.markdown('<div><span class="badge-modulo">MÓDULO 0</span><b style="color: #0f172a; font-size: 15px;">Datos Administrativos de la Consulta</b></div><br>', unsafe_allow_html=True)
+    seccion("Datos Administrativos de la Consulta", "🗂️", modulo=0)
     c0_1, c0_2, c0_3 = st.columns(3)
     with c0_1:
         hc_num = st.text_input("HISTORIA CLÍNICA N°", value="HC-2026-001", key="input_hc_num")
@@ -122,11 +300,9 @@ with tab1:
         )
     with c0_3:
         eps = st.text_input("EPS DEL PACIENTE", value="", placeholder="Escribe la EPS...", key="input_eps")
-    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
-    st.markdown('<div><span class="badge-modulo">MÓDULO 1</span><b style="color: #0f172a; font-size: 15px;">Datos Personales del Paciente</b></div><br>', unsafe_allow_html=True)
-    st.markdown('<span class="subseccion-titulo">➖ IDENTIFICACIÓN E INFORMACIÓN GENERAL</span><br><br>', unsafe_allow_html=True)
+    seccion("Datos Personales del Paciente", "👤", modulo=1)
+    seccion("IDENTIFICACIÓN E INFORMACIÓN GENERAL", "🪪")
 
     c1_1, c1_2, c1_3 = st.columns(3)
     with c1_1:
@@ -138,13 +314,17 @@ with tab1:
     with c1_2:
         num_doc = st.text_input("N° de Documento", value="", placeholder="Número de documento...", key="input_numdoc")
         fecha_nac = st.date_input(
-            "Fecha de Nacimiento", 
+            "Fecha de Nacimiento (DD/MM/AAAA)", 
             value=date(2000, 1, 1),
             min_value=date(1920, 1, 1),
             max_value=date.today(),
+            format="DD/MM/YYYY",
             key="input_fechanac"
         )
-        edad = st.number_input("Edad (Años)", min_value=0, max_value=120, value=0, key="input_edad")
+        _hoy = date.today()
+        edad = _hoy.year - fecha_nac.year - ((_hoy.month, _hoy.day) < (fecha_nac.month, fecha_nac.day))
+        st.session_state["input_edad_calc"] = f"{edad} años"
+        st.text_input("Edad (calculada)", key="input_edad_calc", disabled=True)
         condicion_usuario = st.selectbox("Condición del Usuario", ["Seleccione...", "COTIZANTE", "BENEFICIARIO", "PENSIONADO", "OTRO"], key="input_condicion")
 
     with c1_3:
@@ -173,7 +353,7 @@ with tab1:
         estado_civil = st.selectbox("Estado Civil", ["Seleccione...", "Soltero", "Casado", "Otro"], key="input_estcivil")
         ocupacion = st.text_input("Ocupación", value="", placeholder="Ocupación...", key="input_ocupacion")
 
-    st.markdown('<span class="subseccion-titulo">➖ ACOMPAÑANTE Y RESPONSABLE</span><br><br>', unsafe_allow_html=True)
+    seccion("ACOMPAÑANTE Y RESPONSABLE", "👥")
     c1_4, c1_5 = st.columns(2)
     with c1_4:
         nombre_acomp = st.text_input("Nombre del Acompañante", value="", key="input_acomp")
@@ -182,16 +362,14 @@ with tab1:
         nombre_resp = st.text_input("Nombre del Responsable", value="", key="input_resp")
         tel_resp = st.text_input("Teléfono Responsable", value="", key="input_telresp")
 
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- TAB 2: ANAMNESIS Y ANTECEDENTES MÉDICOS ---
 with tab2:
-    st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
-    st.markdown('<div><span class="badge-modulo">MÓDULO 2</span><b style="color: #0f172a; font-size: 15px;">Anamnesis y Antecedentes Médicos</b></div><br>', unsafe_allow_html=True)
+    seccion("Anamnesis y Antecedentes Médicos", "🗣️", modulo=2)
     motivo = st.text_area("Motivo de Consulta (Textual del paciente)", value="", placeholder="Ej: Presenta dolor agudo en molar inferior...", key="input_motivo")
     enfermedad_actual = st.text_area("Historia de la Enfermedad Actual", value="", placeholder="Describa el inicio, frecuencia y evolución...", key="input_enfermedad")
 
-    st.markdown('<span class="subseccion-titulo">➖ ANTECEDENTES MÉDICOS (DILIGENCIAR CADA ÍTEM)</span><br><br>', unsafe_allow_html=True)
+    seccion("ANTECEDENTES MÉDICOS (DILIGENCIAR CADA ÍTEM)", "📋")
     
     lista_antecedentes = [
         "1. Tratamiento médico", "2. Ingestión medicamentos", "3. Reacciones alérgicas (Anestesia/Antibióticos)",
@@ -215,7 +393,7 @@ with tab2:
 
     obs_antecedentes = st.text_area("Observaciones de Antecedentes Médicos", value="", key="input_obsant")
 
-    st.markdown('<span class="subseccion-titulo">➖ HIGIENE ORAL Y SALUD BUCAL</span><br><br>', unsafe_allow_html=True)
+    seccion("HIGIENE ORAL Y SALUD BUCAL", "🪥")
     c_hig1, c_hig2, c_hig3 = st.columns(3)
     with c_hig1:
         u_visita_fecha = st.date_input("Última visita al Odontólogo", value=date.today(), key="input_uvisita")
@@ -228,14 +406,12 @@ with tab2:
         seda_dental = st.radio("¿Usa Seda Dental?", ["SI", "NO"], index=None, horizontal=True, key="input_seda")
         enjuagues = st.radio("¿Usa Enjuagues Bucales?", ["SI", "NO"], index=None, horizontal=True, key="input_enj")
 
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- TAB 3: EXAMEN FÍSICO ESTOMATOLÓGICO ---
 with tab3:
-    st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
-    st.markdown('<div><span class="badge-modulo">MÓDULO 3</span><b style="color: #0f172a; font-size: 15px;">Examen Físico Estomatológico</b></div><br>', unsafe_allow_html=True)
+    seccion("Examen Físico Estomatológico", "🔎", modulo=3)
     
-    st.markdown('<span class="subseccion-titulo">➖ TEJIDOS BLANDOS Y ESTRUCTURAS BUCALES (MARCAR SI PRESENTA ANORMALIDAD)</span><br><br>', unsafe_allow_html=True)
+    seccion("TEJIDOS BLANDOS Y ESTRUCTURAS BUCALES (MARCAR SI PRESENTA ANORMALIDAD)", "👄")
     elementos_estomatologicos = [
         "1. A.T.M.", "2. Labios", "3. Lengua", "4. Paladar", "5. Piso de boca",
         "6. Carrillos", "7. Glándulas salivares", "8. Maxilares", "9. Senos maxilares",
@@ -248,7 +424,7 @@ with tab3:
         with (col_e1 if i % 2 == 0 else col_e2):
             estomatologico_dict[elem] = st.checkbox(f"{elem} (Anormal)", key=f"est_{i}")
 
-    st.markdown('<span class="subseccion-titulo">➖ HÁBITOS NOCIVOS</span><br><br>', unsafe_allow_html=True)
+    seccion("HÁBITOS NOCIVOS", "🚭")
     habitos_lista = ["Bruxismo", "Deglución atípica", "Empuje lingual", "Fumar", "Morder objetos", "Onicofagia", "Respirador oral", "Uso palillos", "Succión digital", "Otros"]
     habitos_dict = {}
     col_h1, col_h2 = st.columns(2)
@@ -256,7 +432,7 @@ with tab3:
         with (col_h1 if i % 2 == 0 else col_h2):
             habitos_dict[hab] = st.checkbox(hab, key=f"hab_{i}")
 
-    st.markdown('<span class="subseccion-titulo">➖ EXAMEN DENTAL, PERIODONTAL Y HALLAZGOS GENERALES</span><br><br>', unsafe_allow_html=True)
+    seccion("EXAMEN DENTAL, PERIODONTAL Y HALLAZGOS GENERALES", "🦷")
     col_p1, col_p2, col_p3 = st.columns(3)
     with col_p1:
         st.markdown("**Examen Dental**")
@@ -276,20 +452,18 @@ with tab3:
 
     obs_examen_fisico = st.text_area("Observaciones del Examen Físico", value="", key="input_obsexam")
 
-    st.markdown('<span class="subseccion-titulo">➖ HÁBITOS ALIMENTICIOS</span><br><br>', unsafe_allow_html=True)
+    seccion("HÁBITOS ALIMENTICIOS", "🍎")
     c_ali1, c_ali2 = st.columns(2)
     with c_ali1:
         ingesta_carbohidratos = st.radio("Ingesta de Carbohidratos (Azúcares / Harinas)", ["Baja", "Media", "Alta (5-7)"], index=None, horizontal=True, key="input_carb")
     with c_ali2:
         num_comidas = st.radio("Número de Comidas Diarias", ["< 3", "3 - 4", "> 4"], index=None, horizontal=True, key="input_com")
 
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- TAB 4: ODONTOGRAMA, RADIOGRAFÍAS Y DIAGNÓSTICOS ---
 with tab4:
-    st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
-    st.markdown('<div><span class="badge-modulo">MÓDULO 4</span><b style="color: #0f172a; font-size: 16px;">Odontograma y Registro FDI</b></div><br>', unsafe_allow_html=True)
-    st.markdown('<span class="subseccion-titulo">➖ ESQUEMA DENTAL Y CONVENCIONES CLÍNICAS</span><br><br>', unsafe_allow_html=True)
+    seccion("Odontograma y Registro FDI", "🦷", modulo=4)
+    seccion("ESQUEMA DENTAL Y CONVENCIONES CLÍNICAS", "🗺️")
 
     # ---------------- ODONTOGRAMA DIBUJADO (sistema FDI) ----------------
     denticion = st.radio("Tipo de dentición", ["Permanente", "Temporal", "Mixta"],
@@ -399,7 +573,7 @@ with tab4:
         st.dataframe(pd.DataFrame(st.session_state.plan_tratamiento)[["Diente", "Hallazgo", "Superficies"]],
                      use_container_width=True, hide_index=True)
 
-    st.markdown('<span class="subseccion-titulo">➖ AYUDAS DIAGNÓSTICAS Y ÍNDICES</span><br><br>', unsafe_allow_html=True)
+    seccion("AYUDAS DIAGNÓSTICAS Y ÍNDICES", "🩻")
     rx1, rx2, rx3, rx4 = st.columns(4)
     with rx1:
         rx_periapical = st.number_input("Rx Periapical (Placas)", min_value=0, value=0, key="input_rxper")
@@ -414,7 +588,7 @@ with tab4:
         st.metric("% Placa bacteriana (O'Leary)", f"{pct_placa_bacteriana} %")
         pronostico_gral = st.selectbox("Pronóstico", ["Seleccione...", "Favorable", "Desfavorable"], key="input_pron")
 
-    st.markdown('<span class="subseccion-titulo">➖ DIAGNÓSTICOS Y PLAN GENERAL</span><br><br>', unsafe_allow_html=True)
+    seccion("DIAGNÓSTICOS Y PLAN GENERAL", "🧾")
     cd1, cd2 = st.columns(2)
     with cd1:
         diag_presuntivo = st.text_input("Diagnóstico Presuntivo", value="", key="input_diagpres")
@@ -429,12 +603,10 @@ with tab4:
     plan_areas = st.multiselect("Marcar Especialidades Requeridas", ["Promoción y Prevención", "Operatoria", "Endodoncia", "Cirugía", "Rehabilitación", "Otro"], default=[], key="input_planareas")
     desc_plan_tratamiento = st.text_area("Descripción Detallada del Plan de Tratamiento", value="", key="input_descplan")
 
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- TAB 5: EVOLUCIÓN ---
 with tab5:
-    st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
-    st.markdown('<div><span class="badge-modulo">MÓDULO 5</span><b style="color: #0f172a; font-size: 15px;">Evolución del Tratamiento</b></div><br>', unsafe_allow_html=True)
+    seccion("Evolución del Tratamiento", "📈", modulo=5)
     col_ev1, col_ev2, col_ev3 = st.columns([1, 1, 2])
     with col_ev1:
         fecha_ev = st.date_input("Fecha Tratamiento", value=date.today(), key="input_fechaev")
@@ -455,39 +627,13 @@ with tab5:
 
     if st.session_state.evoluciones:
         st.write("---")
-        # Encabezado de la tabla
-        h1, h2, h3, h4 = st.columns([1.2, 1.2, 5, 0.8])
-        h1.markdown("**Fecha**")
-        h2.markdown("**Diente/Sitio**")
-        h3.markdown("**Tratamiento Ejecutado**")
-        h4.markdown("**Borrar**")
-
-        borrar_idx = None
-        for i, ev in enumerate(st.session_state.evoluciones):
-            c1, c2, c3, c4 = st.columns([1.2, 1.2, 5, 0.8])
-            # word-break hace que el texto largo (aunque no tenga espacios) baje de línea
-            for col, campo in ((c1, "Fecha y Hora"), (c2, "Diente/Sitio"), (c3, "Tratamiento Ejecutado")):
-                texto = html.escape(str(ev.get(campo, ""))).replace("\n", "<br>")
-                col.markdown(f'<div style="word-break: break-word; overflow-wrap: anywhere; white-space: normal;">{texto}</div>', unsafe_allow_html=True)
-            if c4.button("🗑️", key=f"borrar_ev_{i}", help="Borrar esta evolución"):
-                borrar_idx = i
-
-        if borrar_idx is not None:
-            st.session_state.evoluciones.pop(borrar_idx)
-            st.rerun()
-
-        st.write("")
-        if st.button("🗑️ BORRAR TODAS LAS EVOLUCIONES", key="borrar_todas_ev"):
-            st.session_state.evoluciones = []
-            st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.dataframe(pd.DataFrame(st.session_state.evoluciones), use_container_width=True)
 
 # --- TAB 6: FIRMAS Y CONSENTIMIENTOS INFORMADOS ---
 with tab6:
-    st.markdown('<div class="stCardModule">', unsafe_allow_html=True)
-    st.markdown('<div><span class="badge-modulo">MÓDULO 6</span><b style="color: #0f172a; font-size: 15px;">Consentimientos Informados y Firmas Digitales</b></div><br>', unsafe_allow_html=True)
+    seccion("Consentimientos Informados y Firmas Digitales", "✍️", modulo=6)
     
-    st.markdown('<span class="subseccion-titulo">📋 DILIGENCIAMIENTO DE CONSENTIMIENTO INFORMADO</span><br><br>', unsafe_allow_html=True)
+    seccion("DILIGENCIAMIENTO DE CONSENTIMIENTO INFORMADO", "📋")
     
     consentimientos_disponibles = [
         "Consentimiento Informado para Higiene Oral",
@@ -603,7 +749,7 @@ with tab6:
     st.write("---")
 
     # CARGA DE FIRMAS DIGITALES
-    st.markdown('<span class="subseccion-titulo">✍️ CARGA DE FIRMAS DIGITALES</span><br><br>', unsafe_allow_html=True)
+    seccion("CARGA DE FIRMAS DIGITALES", "🖊️")
     col_f1, col_f2 = st.columns(2)
     with col_f1:
         st.markdown("**Firma del Paciente / Acompañante**")
@@ -621,77 +767,126 @@ with tab6:
 
     st.write("---")
 
-    # BOTÓN GENERAL GENERAR PDF
-    if st.button("🔒 GENERAR Y COMPILAR PDF COMPLETO", use_container_width=True):
-        if nombre_paciente and nombre_odonto:
-            datos_hc = {
-                "Fecha de Atención": fecha_hc.strftime("%Y-%m-%d"),
-                "Historia Clínica N°": hc_num,
-                "EPS": eps,
-                "Tipo Plan": tipo_plan if tipo_plan != "Seleccione..." else "NO ESPECIFICADO",
-                "Condición Usuario": condicion_usuario if condicion_usuario != "Seleccione..." else "NO ESPECIFICADO",
-                "Paciente": nombre_paciente,
-                "Tipo Doc": tipo_doc if tipo_doc != "Seleccione..." else "CC",
-                "Documento Paciente": num_doc,
-                "Sexo": sexo if sexo else "NO ESPECIFICADO",
-                "Edad": edad,
-                "Estado Civil": estado_civil if estado_civil != "Seleccione..." else "NO ESPECIFICADO",
-                "Ocupación": ocupacion,
-                "Fecha Nacimiento": fecha_nac.strftime("%Y-%m-%d"),
-                "Teléfono": telefono,
-                "Dirección": direccion,
-                "Ciudad/Departamento": ciudad_depto,
-                "Acompañante": f"{nombre_acomp} (Tel: {tel_acomp})" if nombre_acomp else "Ninguno",
-                "Responsable": f"{nombre_resp} (Tel: {tel_resp})" if nombre_resp else "Ninguno",
-                "Motivo de Consulta": motivo,
-                "Enfermedad Actual": enfermedad_actual,
-                "Antecedentes": antecedentes_dict,
-                "Obs Antecedentes": obs_antecedentes,
-                "Higiene Oral": f"Visita: {u_visita_fecha} | Motivo: {u_visita_motivo} | Estado: {higiene_oral_est} | Cepillo: {cepillo_dental} ({veces_al_dia}/día) | Seda: {seda_dental} | Enjuague: {enjuagues}",
-                "Estomatologico": estomatologico_dict,
-                "Habitos": habitos_dict,
-                "Dental": f"Supernumerarios: {'SI' if ex_supernumerarios else 'NO'}, Abrasión: {'SI' if ex_abrasion else 'NO'}, Manchas: {'SI' if ex_manchas else 'NO'}, Pat. Pulpar: {'SI' if ex_patologia_pulpar else 'NO'}",
-                "Periodontal": f"Bolsas: {'SI' if perio_bolsas else 'NO'}, Placa: {'SI' if perio_placa else 'NO'}, Cálculos: {'SI' if perio_calculos else 'NO'}",
-                "Hallazgos Gen": f"Ortodoncia: {'SI' if hallaz_ortodoncia else 'NO'}, Prótesis: {'SI' if hallaz_protesis else 'NO'}",
-                "Obs Examen Fisico": obs_examen_fisico,
-                "Alimenticios": f"Carbohidratos: {ingesta_carbohidratos} | Comidas/día: {num_comidas}",
-                "Dentadura": tipo_dentadura if tipo_dentadura else "No especificada",
-                "Radiografias": f"Periapical: {rx_periapical}, Oclusal: {rx_oclusal}, Panorámica: {rx_panoramica}, Otra: {rx_otra} | Tomadas: {placas_tomadas}, Dañadas: {placas_danadas}",
-                "Indices": f"Placa Bacteriana: {pct_placa_bacteriana}% | Pronóstico: {pronostico_gral}",
-                "Diags": f"Presuntivo: {diag_presuntivo} | Principal: {diag_principal} ({cod_principal}) | Secundario: {diag_secundario} ({cod_secundario})",
-                "Plan Resumen": f"Áreas: {', '.join(plan_areas)} | Citas: {citas_programar} | Detalle: {desc_plan_tratamiento}",
-                "Consentimiento Tipo": tipo_consentimiento,
-                "Consentimientos Seleccionados": tipo_consentimiento,
-                "Consentimiento Aceptado": "SÍ" if acepta_consentimiento else "NO / NO APLICA",
-                "Proxima Cita Fluor": fecha_proxima_fluor.strftime("%Y-%m-%d") if fecha_proxima_fluor else "N/A",
-                "Obs Higiene Oral": obs_higiene,
-                "Obs Fluor": obs_fluor,
-                "Obs Raspaje": obs_raspaje,
-                "Obs Consentimiento Adicional": obs_consentimiento_adicional,
-                "Reacciones Previas Fluor": reacciones_previas_fluor,
-                "Instrumentos Raspaje": ", ".join(instrumentos_usados) if instrumentos_usados else "N/A",
-                "Zonas Raspaje": zonas_raspaje,
-                "Odontólogo Tratante": nombre_odonto,
-                "Código/Registro": tarjeta_prof
-            }
+    # ---------------- GENERAR PDF (un solo clic) ----------------
+    # Copias de lo guardado en la sesión, para usarlas en el momento del clic
+    _plan_pdf = list(st.session_state.plan_tratamiento)
+    _evoluciones_pdf = list(st.session_state.evoluciones)
 
-            pdf_data = generar_pdf_hc(
-                datos_hc, 
-                st.session_state.plan_tratamiento, 
-                st.session_state.evoluciones,
-                firma_paciente_file=file_firma_paciente,
-                firma_odonto_file=file_firma_odonto,
-                odontograma_png=odontograma_png
-            )
+    def construir_pdf():
+        """Arma los datos y genera el PDF. Se ejecuta al hacer clic en el botón."""
+        datos_hc = {
+            "Fecha de Atención": fecha_hc.strftime("%Y-%m-%d"),
+            "Historia Clínica N°": hc_num,
+            "EPS": eps,
+            "Tipo Plan": tipo_plan if tipo_plan != "Seleccione..." else "NO ESPECIFICADO",
+            "Condición Usuario": condicion_usuario if condicion_usuario != "Seleccione..." else "NO ESPECIFICADO",
+            "Paciente": nombre_paciente,
+            "Tipo Doc": tipo_doc if tipo_doc != "Seleccione..." else "CC",
+            "Documento Paciente": num_doc,
+            "Sexo": sexo if sexo else "NO ESPECIFICADO",
+            "Edad": edad,
+            "Estado Civil": estado_civil if estado_civil != "Seleccione..." else "NO ESPECIFICADO",
+            "Ocupación": ocupacion,
+            "Fecha Nacimiento": fecha_nac.strftime("%Y-%m-%d"),
+            "Teléfono": telefono,
+            "Dirección": direccion,
+            "Ciudad/Departamento": ciudad_depto,
+            "Acompañante": f"{nombre_acomp} (Tel: {tel_acomp})" if nombre_acomp else "Ninguno",
+            "Responsable": f"{nombre_resp} (Tel: {tel_resp})" if nombre_resp else "Ninguno",
+            "Motivo de Consulta": motivo,
+            "Enfermedad Actual": enfermedad_actual,
+            "Antecedentes": antecedentes_dict,
+            "Obs Antecedentes": obs_antecedentes,
+            "Higiene Oral": f"Visita: {u_visita_fecha} | Motivo: {u_visita_motivo} | Estado: {higiene_oral_est} | Cepillo: {cepillo_dental} ({veces_al_dia}/día) | Seda: {seda_dental} | Enjuague: {enjuagues}",
+            "Estomatologico": estomatologico_dict,
+            "Habitos": habitos_dict,
+            "Dental": f"Supernumerarios: {'SI' if ex_supernumerarios else 'NO'}, Abrasión: {'SI' if ex_abrasion else 'NO'}, Manchas: {'SI' if ex_manchas else 'NO'}, Pat. Pulpar: {'SI' if ex_patologia_pulpar else 'NO'}",
+            "Periodontal": f"Bolsas: {'SI' if perio_bolsas else 'NO'}, Placa: {'SI' if perio_placa else 'NO'}, Cálculos: {'SI' if perio_calculos else 'NO'}",
+            "Hallazgos Gen": f"Ortodoncia: {'SI' if hallaz_ortodoncia else 'NO'}, Prótesis: {'SI' if hallaz_protesis else 'NO'}",
+            "Obs Examen Fisico": obs_examen_fisico,
+            "Alimenticios": f"Carbohidratos: {ingesta_carbohidratos} | Comidas/día: {num_comidas}",
+            "Dentadura": tipo_dentadura if tipo_dentadura else "No especificada",
+            "Radiografias": f"Periapical: {rx_periapical}, Oclusal: {rx_oclusal}, Panorámica: {rx_panoramica}, Otra: {rx_otra} | Tomadas: {placas_tomadas}, Dañadas: {placas_danadas}",
+            "Indices": f"Placa Bacteriana: {pct_placa_bacteriana}% | Pronóstico: {pronostico_gral}",
+            "Diags": f"Presuntivo: {diag_presuntivo} | Principal: {diag_principal} ({cod_principal}) | Secundario: {diag_secundario} ({cod_secundario})",
+            "Plan Resumen": f"Áreas: {', '.join(plan_areas)} | Citas: {citas_programar} | Detalle: {desc_plan_tratamiento}",
+            "Consentimiento Tipo": tipo_consentimiento,
+            "Consentimientos Seleccionados": tipo_consentimiento,
+            "Consentimiento Aceptado": "SÍ" if acepta_consentimiento else "NO / NO APLICA",
+            "Proxima Cita Fluor": fecha_proxima_fluor.strftime("%Y-%m-%d") if fecha_proxima_fluor else "N/A",
+            "Obs Higiene Oral": obs_higiene,
+            "Obs Fluor": obs_fluor,
+            "Obs Raspaje": obs_raspaje,
+            "Obs Consentimiento Adicional": obs_consentimiento_adicional,
+            "Reacciones Previas Fluor": reacciones_previas_fluor,
+            "Instrumentos Raspaje": ", ".join(instrumentos_usados) if instrumentos_usados else "N/A",
+            "Zonas Raspaje": zonas_raspaje,
+            "Odontólogo Tratante": nombre_odonto,
+            "Código/Registro": tarjeta_prof
+        }
+        return generar_pdf_hc(
+            datos_hc,
+            _plan_pdf,
+            _evoluciones_pdf,
+            firma_paciente_file=file_firma_paciente,
+            firma_odonto_file=file_firma_odonto,
+            odontograma_png=odontograma_png
+        )
 
-            st.download_button(
-                label="📕 DESCARGAR PDF COMPLETO CON HISTORIA Y CONSENTIMIENTO",
-                data=pdf_data,
-                file_name="Historia_Clinica_San_Pedro_Claver.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
-        else:
-            st.error("⚠️ Por favor ingresa el nombre del paciente (Módulo 1) y el del profesional (Módulo 6) antes de generar el reporte PDF.")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+    requisitos = [
+        ("Nombre del paciente", "Módulo 1", bool(nombre_paciente), True),
+        ("Nombre del profesional / estudiante", "Módulo 6", bool(nombre_odonto), True),
+        ("N° de documento del paciente", "Módulo 1", bool(num_doc), False),
+        ("Consentimiento aceptado", "Módulo 6", bool(acepta_consentimiento), False),
+        ("Firma del paciente", "Módulo 6", file_firma_paciente is not None, False),
+        ("Firma del profesional", "Módulo 6", file_firma_odonto is not None, False),
+    ]
+    listo_para_pdf = all(ok for _, _, ok, obligatorio in requisitos if obligatorio)
+    tarjeta_requisitos(requisitos, listo_para_pdf)
+
+    _doc = (num_doc or "paciente").strip().replace(" ", "_")
+    nombre_pdf = f"HC_Odontologica_{_doc}_{fecha_hc.strftime('%Y-%m-%d')}.pdf"
+    # Con Streamlit reciente el PDF se crea en el mismo clic de descarga (sin recargar la página);
+    # en versiones antiguas se prepara antes, solo cuando ya están los datos obligatorios.
+    if DESCARGA_DIFERIDA:
+        datos_pdf, al_hacer_clic = construir_pdf, "ignore"
+    else:
+        datos_pdf, al_hacer_clic = (construir_pdf() if listo_para_pdf else b""), None
+    st.download_button(
+        label="📄 GENERAR Y DESCARGAR HISTORIA CLÍNICA (PDF)",
+        data=datos_pdf,
+        file_name=nombre_pdf,
+        mime="application/pdf",
+        key="btn_pdf",
+        type="primary",
+        disabled=not listo_para_pdf,
+        on_click=al_hacer_clic,
+        use_container_width=True,
+    )
+
+
+# ---------------- PANEL DE AVANCE (Tailwind) ----------------
+def _lleno(v):
+    if isinstance(v, str):
+        return bool(v.strip()) and v != "Seleccione..."
+    return bool(v)
+
+
+def _avance(valores):
+    return sum(_lleno(v) for v in valores) / len(valores) if valores else 0
+
+
+avance_modulos = [
+    ("Datos administrativos", _avance([hc_num, eps, nombre_paciente, tipo_doc, num_doc, sexo, direccion, telefono,
+                                       estado_civil, ocupacion, tipo_plan, condicion_usuario])),
+    ("Anamnesis y antecedentes", _avance([motivo, enfermedad_actual, higiene_oral_est, cepillo_dental, seda_dental,
+                                          enjuagues] + list(antecedentes_dict.values()))),
+    ("Examen estomatológico", _avance([obs_examen_fisico, ingesta_carbohidratos, num_comidas])),
+    ("Odontograma y diagnóstico", _avance([st.session_state.odo_superficies or st.session_state.odo_dientes,
+                                           diag_principal, cod_principal, pronostico_gral, plan_areas,
+                                           desc_plan_tratamiento])),
+    ("Evolución", _avance([st.session_state.evoluciones])),
+    ("Firmas y consentimientos", _avance([consentimientos_seleccionados, acepta_consentimiento, nombre_odonto,
+                                          tarjeta_prof, file_firma_paciente, file_firma_odonto])),
+]
+panel_avance(panel_progreso, avance_modulos, listo_pdf=bool(nombre_paciente and nombre_odonto))
